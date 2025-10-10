@@ -1,16 +1,73 @@
-# F2025_4495_071_GSi817
-  Team Lead: Gursimran Singh (300377817) - singhg153@student.douglascollege.ca
-  Member: Shubham Shubham (300352587) - s10@student.douglascollege.ca
-  
-AI-Enhanced Personalized Learning and Career Pathway Platform
+# Welcome to your Lovable project
 
-In today’s fast-paced educational environment, students often struggle with managing their studies effectively while also preparing for future careers. Traditional learning platforms provide content but fail to offer personalized guidance tailored to individual strengths, weaknesses, and learning styles.
-This project proposes an AI-driven platform that generates personalized learning paths based on a student’s course syllabus, performance, and study preferences. Additionally, the platform includes career readiness features, such as skill recommendations, certificate suggestions, an interactive resume builder, and an AI-powered interview preparation module.
-  The platform’s key objectives are:
-    •	Optimize academic learning through AI-generated weekly study plans.
-    •	Support long-term career planning with personalized skill and certification guidance.
-    •	Provide tools to prepare resumes and practice interviews efficiently.
-The project combines AI, analytics, and user-centered design to enhance both academic performance and career readiness.
+## Project info
 
+**URL**: https://lovable.dev/projects/1e592731-cad9-4fa4-a613-29114f1ea2dc
 
-  
+## How can I edit this code?
+
+There are several ways of editing your application.
+
+**Use Lovable**
+
+Simply visit the [Lovable Project](https://lovable.dev/projects/1e592731-cad9-4fa4-a613-29114f1ea2dc) and start prompting.
+
+Changes made via Lovable will be committed automatically to this repo.
+
+**Use your preferred IDE**
+
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+
+The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+
+Follow these steps:
+
+```sh
+# Step 1: Clone the repository using the project's Git URL.
+git clone <YOUR_GIT_URL>
+
+# Step 2: Navigate to the project directory.
+cd <YOUR_PROJECT_NAME>
+
+# Step 3: Install the necessary dependencies.
+npm i
+
+# Step 4: Start the development server with auto-reloading and an instant preview.
+npm run dev
+```
+
+**Edit a file directly in GitHub**
+
+- Navigate to the desired file(s).
+- Click the "Edit" button (pencil icon) at the top right of the file view.
+- Make your changes and commit the changes.
+
+**Use GitHub Codespaces**
+
+- Navigate to the main page of your repository.
+- Click on the "Code" button (green button) near the top right.
+- Select the "Codespaces" tab.
+- Click on "New codespace" to launch a new Codespace environment.
+- Edit files directly within the Codespace and commit and push your changes once you're done.
+
+## What technologies are used for this project?
+
+This project is built with:
+
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
+
+## How can I deploy this project?
+
+Simply open [Lovable](https://lovable.dev/projects/1e592731-cad9-4fa4-a613-29114f1ea2dc) and click on Share -> Publish.
+
+## Can I connect a custom domain to my Lovable project?
+
+Yes, you can!
+
+To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+
+Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)

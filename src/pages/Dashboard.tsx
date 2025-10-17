@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
-import { Target, LogOut, TrendingUp, CheckCircle2, Award, Zap, BookOpen, Rocket, Users, Calendar, Mail, Github, Linkedin } from 'lucide-react';
+import { Target, LogOut, TrendingUp, CheckCircle2, Award, Zap, BookOpen, Rocket, Users, Calendar, Mail, Github, Linkedin, FileText } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -264,6 +264,47 @@ const Dashboard = () => {
 
       <div className="flex-1 relative z-10">
         <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
+            <Card className="border-2 bg-gradient-to-br from-primary/10 to-accent/10 hover:shadow-lg transition-all cursor-pointer" onClick={() => navigate('/resume-builder')}>
+              <CardContent className="pt-6 pb-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-primary/20 rounded-xl">
+                    <FileText className="h-8 w-8 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      Resume Builder
+                      <Badge variant="secondary" className="text-xs">AI Powered</Badge>
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Create a professional resume with AI assistance
+                    </p>
+                  </div>
+                  <Rocket className="h-5 w-5 text-primary opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 bg-gradient-to-br from-accent/10 to-primary/10 hover:shadow-lg transition-all">
+              <CardContent className="pt-6 pb-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-accent/20 rounded-xl">
+                    <Zap className="h-8 w-8 text-accent" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      Quick Actions
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Access your tools and features
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Stats Overview */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 animate-fade-in">
             <Card className="border-2 hover:shadow-lg transition-shadow">
@@ -403,8 +444,8 @@ const Dashboard = () => {
                   <div
                     key={task.id}
                     className={`p-3 sm:p-5 rounded-lg sm:rounded-xl border-2 transition-all duration-300 ${task.completed
-                        ? 'bg-muted/30 border-border/50'
-                        : 'bg-card border-border hover:border-primary/50 hover:shadow-md'
+                      ? 'bg-muted/30 border-border/50'
+                      : 'bg-card border-border hover:border-primary/50 hover:shadow-md'
                       }`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >

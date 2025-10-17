@@ -58,7 +58,7 @@ const Onboarding = () => {
     if (updateUser) {
       updateUser({ name: data.name, onboardingComplete: true });
     }
-    navigate('/dashboard');
+    navigate('/generating-plan');
   };
 
   const isStepValid = () => {

@@ -28,17 +28,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    // Simulate login - check if user exists
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const existingUser = users.find((u: any) => u.email === email && u.password === password);
-    
-    if (existingUser) {
-      const { password: _, ...userWithoutPassword } = existingUser;
-      setUser(userWithoutPassword);
-      localStorage.setItem('user', JSON.stringify(userWithoutPassword));
-    } else {
-      throw new Error('Invalid credentials');
-    }
+    // Mock login - accept any credentials
+    const mockUser = {
+      id: Math.random().toString(36).substr(2, 9),
+      email,
+      onboardingComplete: true,
+    };
+
+    setUser(mockUser);
+    localStorage.setItem('user', JSON.stringify(mockUser));
   };
 
   const signup = async (email: string, password: string) => {

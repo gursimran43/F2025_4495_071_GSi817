@@ -6,10 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileText, Sparkles, Download, Eye, ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
+import { ResumePreview } from '@/components/ResumePreview';
 
 interface Experience {
     id: string;
@@ -30,6 +32,7 @@ const ResumeBuilder = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const [isGenerating, setIsGenerating] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
 
     const [personalInfo, setPersonalInfo] = useState({
         name: '',
@@ -115,17 +118,56 @@ const ResumeBuilder = () => {
     };
 
     const handlePreview = () => {
-        toast({
-            title: "Preview Mode",
-            description: "Resume preview feature coming soon!",
-        });
+        setShowPreview(true);
     };
 
-    const handleDownload = () => {
-        toast({
-            title: "Download Started",
-            description: "Your resume is being downloaded as PDF.",
-        });
+    const handleDownload = async () => {
+        try {
+            const element = document.getElementById('resume-content');
+            if (!element) {
+                toast({
+                    variant: 'destructive',
+                    title: "Error",
+                    description: "Could not find resume content to download.",
+                });
+                return;
+            }
+
+            // Import html2canvas and jsPDF dynamically
+            const html2canvas = (await import('html2canvas')).default;
+            const { jsPDF } = await import('jspdf');
+
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                logging: false,
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4',
+            });
+
+            const imgWidth = 210; // A4 width in mm
+            const pageHeight = 297; // A4 height in mm
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+            pdf.save(`${personalInfo.name || 'resume'}.pdf`);
+
+            toast({
+                title: "Download Started",
+                description: "Your resume is being downloaded as PDF.",
+            });
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: "Download Failed",
+                description: "Could not generate PDF. Please try again.",
+            });
+        }
     };
 
     return (
@@ -439,6 +481,21 @@ const ResumeBuilder = () => {
             </div>
 
             <Footer />
+
+            {/* Preview Dialog */}
+            <Dialog open={showPreview} onOpenChange={setShowPreview}>
+                <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Resume Preview</DialogTitle>
+                    </DialogHeader>
+                    <ResumePreview
+                        personalInfo={personalInfo}
+                        experiences={experiences}
+                        education={education}
+                        skills={skills}
+                    />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

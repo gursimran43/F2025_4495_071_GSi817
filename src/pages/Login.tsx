@@ -22,12 +22,16 @@ const Login = () => {
 
     try {
       await login(email, password);
+      toast({
+        title: 'Welcome back!',
+        description: 'Login successful',
+      });
       navigate('/dashboard');
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Login failed',
-        description: 'Invalid email or password',
+        description: 'Something went wrong',
       });
     } finally {
       setIsLoading(false);

@@ -7,7 +7,8 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
-import { Target, LogOut, TrendingUp, CheckCircle2, Award, Zap, BookOpen, Rocket, Users, Calendar, Mail, Github, Linkedin, FileText } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Target, LogOut, TrendingUp, CheckCircle2, Award, Zap, BookOpen, Rocket, Users, Calendar, Mail, Github, Linkedin, FileText, ExternalLink } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -26,11 +27,66 @@ interface Recommendation {
   type: 'course' | 'project' | 'certification' | 'network';
 }
 
+interface CertificationPath {
+  id: string;
+  name: string;
+  description: string;
+  platform: string;
+  level: string;
+  duration: string;
+  link: string;
+  focusAreas: string[];
+}
+
+const certificationPaths: CertificationPath[] = [
+  {
+    id: 'aws-saa',
+    name: 'AWS Certified Solutions Architect – Associate',
+    description: 'Design resilient architectures, secure workloads, and choose the right AWS services for scalable systems.',
+    platform: 'AWS Skill Builder',
+    level: 'Intermediate',
+    duration: '3-4 months',
+    link: 'https://aws.amazon.com/certification/certified-solutions-architect-associate/',
+    focusAreas: ['Resilience', 'Security', 'Cost Optimization'],
+  },
+  {
+    id: 'aws-sap',
+    name: 'AWS Certified Solutions Architect – Professional',
+    description: 'Validate advanced expertise in designing multi-account AWS ecosystems and migrating enterprise workloads.',
+    platform: 'AWS Certification Portal',
+    level: 'Advanced',
+    duration: '4-6 months',
+    link: 'https://aws.amazon.com/certification/certified-solutions-architect-professional/',
+    focusAreas: ['Enterprise Design', 'Migration', 'Automation'],
+  },
+  {
+    id: 'aws-cloud-quest',
+    name: 'AWS Cloud Quest: Solutions Architect',
+    description: 'Gamified, hands-on labs that simulate client engagements so you can design and deliver solutions end-to-end.',
+    platform: 'AWS Skill Builder Labs',
+    level: 'Hands-on',
+    duration: 'Self-paced',
+    link: 'https://explore.skillbuilder.aws/learn/course/external/view/elearning/11545/aws-cloud-quest-solutions-architect',
+    focusAreas: ['Hands-on Labs', 'Client Briefs', 'Automation'],
+  },
+  {
+    id: 'aws-well-architected',
+    name: 'AWS Well-Architected Pro',
+    description: 'Master the AWS Well-Architected pillars and learn how to run formal workload reviews with stakeholders.',
+    platform: 'AWS Partner Training',
+    level: 'Advanced',
+    duration: '2-3 months',
+    link: 'https://aws.amazon.com/training/learn-about/well-architected/',
+    focusAreas: ['Operational Excellence', 'Reliability', 'Performance'],
+  },
+];
+
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [isCertificationDialogOpen, setIsCertificationDialogOpen] = useState(false);
 
   useEffect(() => {
     // Generate AI tasks based on onboarding data
@@ -214,6 +270,12 @@ const Dashboard = () => {
         return '🤝';
       default:
         return '💡';
+    }
+  };
+
+  const handleRecommendationClick = (rec: Recommendation) => {
+    if (rec.title === 'AWS Solutions Architect Certification') {
+      setIsCertificationDialogOpen(true);
     }
   };
 
@@ -527,7 +589,16 @@ const Dashboard = () => {
                 {recommendations.map((rec) => (
                   <div
                     key={rec.id}
-                    className="group p-3 sm:p-5 rounded-lg sm:rounded-xl border-2 border-border bg-card hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleRecommendationClick(rec)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        handleRecommendationClick(rec);
+                      }
+                    }}
+                    className="group p-3 sm:p-5 rounded-lg sm:rounded-xl border-2 border-border bg-card hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                   >
                     <div className="flex items-start gap-3 sm:gap-4">
                       <div className="p-2 sm:p-3 bg-primary/10 rounded-lg group-hover:scale-110 transition-transform flex-shrink-0">
@@ -656,6 +727,92 @@ const Dashboard = () => {
           </div>
         </div>
       </footer>
+
+      <Dialog open={isCertificationDialogOpen} onOpenChange={setIsCertificationDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto border-2">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="flex items-center gap-2 text-left text-xl sm:text-2xl">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Award className="h-5 w-5 text-primary" />
+              </div>
+              AWS Solutions Architect Playbook
+            </DialogTitle>
+            <DialogDescription className="text-sm sm:text-base">
+              Choose the certification path that matches your experience, then jump directly to the official AWS learning hub.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+              {certificationPaths.map((cert) => (
+                <Card key={cert.id} className="border-2 h-full flex flex-col bg-card/95">
+                  <CardHeader className="space-y-2 pb-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <CardTitle className="text-base sm:text-lg text-foreground flex-1">
+                        {cert.name}
+                      </CardTitle>
+                      <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                        {cert.level}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="text-xs bg-primary/5 border-primary/30">
+                        {cert.duration}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {cert.platform}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3 flex-1 flex flex-col">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {cert.description}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {cert.focusAreas.map((area) => (
+                        <Badge
+                          key={`${cert.id}-${area}`}
+                          variant="outline"
+                          className="text-xs bg-accent/10 border-accent/30"
+                        >
+                          {area}
+                        </Badge>
+                      ))}
+                    </div>
+                    <Button asChild variant="secondary" className="mt-auto gap-2 text-sm">
+                      <a
+                        href={cert.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center justify-center w-full"
+                      >
+                        Go to platform
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <Card className="border border-dashed border-primary/40 bg-primary/5">
+              <CardContent className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center py-4">
+                <div className="p-3 bg-background rounded-2xl">
+                  <BookOpen className="h-6 w-6 text-primary" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm sm:text-base font-semibold text-foreground">
+                    Prep smarter with hands-on labs
+                  </p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Pair these certifications with 1-2 hours of lab time per day and keep track of milestones right inside your GoalFlow dashboard.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

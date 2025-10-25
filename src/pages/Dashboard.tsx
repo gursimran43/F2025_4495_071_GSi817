@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Target, LogOut, TrendingUp, CheckCircle2, Award, Zap, BookOpen, Rocket, Users, Calendar, Mail, Github, Linkedin, FileText, ExternalLink } from 'lucide-react';
+import { Target, LogOut, TrendingUp, CheckCircle2, Award, Zap, BookOpen, Rocket, Users, Calendar, Mail, Github, Linkedin, FileText, ExternalLink, MessageCircle, Globe2 } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -81,12 +81,77 @@ const certificationPaths: CertificationPath[] = [
   },
 ];
 
+interface CommunityHub {
+  id: string;
+  name: string;
+  platform: string;
+  format: string;
+  audience: string;
+  description: string;
+  link: string;
+  highlights: string[];
+}
+
+const communityHubs: CommunityHub[] = [
+  {
+    id: 'reddit-aws-cert',
+    name: 'r/AWSCertifications',
+    platform: 'Reddit',
+    format: 'Async forum + AMAs',
+    audience: 'Aspiring & certified AWS architects',
+    description: 'Daily study threads, exam experience writeups, and resource swaps focused on AWS certifications.',
+    link: 'https://www.reddit.com/r/AWSCertifications/',
+    highlights: ['Exam debriefs', 'Study cohorts', 'Resource library'],
+  },
+  {
+    id: 'reddit-cloud',
+    name: 'r/aws',
+    platform: 'Reddit',
+    format: 'Architecture reviews',
+    audience: 'Cloud engineers & builders',
+    description: 'Share designs, troubleshoot deployments, and learn from weekly show-and-tell posts from AWS practitioners.',
+    link: 'https://www.reddit.com/r/aws/',
+    highlights: ['Design critiques', 'Launch feedback', 'News digests'],
+  },
+  {
+    id: 'discord-freecodecamp',
+    name: 'freeCodeCamp Cloud Guild',
+    platform: 'Discord',
+    format: 'Live chats + study rooms',
+    audience: 'Hands-on learners & career switchers',
+    description: 'Join Pomodoro study rooms, cloud challenge channels, and mentorship office hours to stay accountable.',
+    link: 'https://discord.gg/freecodecamp',
+    highlights: ['Pomodoro rooms', 'Mentor Q&A', 'Accountability pods'],
+  },
+  {
+    id: 'cncf-slack',
+    name: 'CNCF Slack #aws + #serverless',
+    platform: 'Slack',
+    format: 'Channel-based hub',
+    audience: 'Platform, DevOps, and OSS maintainers',
+    description: 'Tap into CNCF working groups, meetup announcements, and open-source collaboration threads.',
+    link: 'https://slack.cncf.io/',
+    highlights: ['Working groups', 'Meetup calendar', 'Open issues'],
+  },
+  {
+    id: 'devto-cloud',
+    name: 'Dev.to Cloud & Serverless',
+    platform: 'Dev.to',
+    format: 'Articles + discussions',
+    audience: 'Writers & builders documenting journeys',
+    description: 'Publish progress logs, get editorial feedback, and connect with readers who follow AWS career paths.',
+    link: 'https://dev.to/t/cloud',
+    highlights: ['Writing prompts', 'Peer edits', 'Signal boosting'],
+  },
+];
+
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isCertificationDialogOpen, setIsCertificationDialogOpen] = useState(false);
+  const [isCommunityDialogOpen, setIsCommunityDialogOpen] = useState(false);
 
   useEffect(() => {
     // Generate AI tasks based on onboarding data
@@ -276,6 +341,8 @@ const Dashboard = () => {
   const handleRecommendationClick = (rec: Recommendation) => {
     if (rec.title === 'AWS Solutions Architect Certification') {
       setIsCertificationDialogOpen(true);
+    } else if (rec.title === 'Join Tech Communities') {
+      setIsCommunityDialogOpen(true);
     }
   };
 
@@ -806,6 +873,92 @@ const Dashboard = () => {
                   </p>
                   <p className="text-xs sm:text-sm text-muted-foreground">
                     Pair these certifications with 1-2 hours of lab time per day and keep track of milestones right inside your GoalFlow dashboard.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCommunityDialogOpen} onOpenChange={setIsCommunityDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto border-2">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="flex items-center gap-2 text-left text-xl sm:text-2xl">
+              <div className="p-2 bg-accent/10 rounded-lg">
+                <MessageCircle className="h-5 w-5 text-accent" />
+              </div>
+              Community Launchpad
+            </DialogTitle>
+            <DialogDescription className="text-sm sm:text-base">
+              Plug into real-time study buddies, architecture critiques, and in-person meetups tailored for AWS & open-source builders.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+              {communityHubs.map((community) => (
+                <Card key={community.id} className="border-2 bg-card/95 flex flex-col h-full">
+                  <CardHeader className="space-y-2 pb-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <CardTitle className="text-base sm:text-lg text-foreground flex-1">
+                        {community.name}
+                      </CardTitle>
+                      <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                        {community.platform}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="text-xs bg-accent/5 border-accent/30">
+                        {community.format}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {community.audience}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3 flex-1 flex flex-col">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {community.description}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {community.highlights.map((highlight) => (
+                        <Badge
+                          key={`${community.id}-${highlight}`}
+                          variant="outline"
+                          className="text-xs bg-primary/5 border-primary/30"
+                        >
+                          {highlight}
+                        </Badge>
+                      ))}
+                    </div>
+                    <Button asChild variant="outline" className="mt-auto gap-2 text-sm">
+                      <a
+                        href={community.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center justify-center w-full"
+                      >
+                        Visit community
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <Card className="border border-dashed border-accent/40 bg-accent/5">
+              <CardContent className="flex flex-col gap-3 sm:gap-4 py-4 sm:flex-row sm:items-center">
+                <div className="p-3 bg-background rounded-2xl">
+                  <Globe2 className="h-6 w-6 text-accent" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm sm:text-base font-semibold text-foreground">
+                    Blend async + live touchpoints
+                  </p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Pair an always-on space (Reddit or Dev.to) with one live community (Discord or Slack) to keep support flowing 24/7.
                   </p>
                 </div>
               </CardContent>

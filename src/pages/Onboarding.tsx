@@ -13,27 +13,37 @@ import Footer from '@/components/Footer';
 
 interface OnboardingData {
   name: string;
-  age: string;
+  email: string;
   profession: string;
+  experience: string;
+  industry: string;
   goals: string;
   timeline: string;
   currentSkills: string;
+  learningStyle: string;
+  weeklyHours: string;
+  motivation: string;
 }
 
 const Onboarding = () => {
   const [step, setStep] = useState(1);
   const [data, setData] = useState<OnboardingData>({
     name: '',
-    age: '',
+    email: '',
     profession: '',
+    experience: '',
+    industry: '',
     goals: '',
     timeline: '',
     currentSkills: '',
+    learningStyle: '',
+    weeklyHours: '',
+    motivation: '',
   });
   const { updateUser } = useAuth();
   const navigate = useNavigate();
 
-  const totalSteps = 3;
+  const totalSteps = 4;
   const progress = (step / totalSteps) * 100;
 
   const handleChange = (field: keyof OnboardingData, value: string) => {
@@ -64,11 +74,13 @@ const Onboarding = () => {
   const isStepValid = () => {
     switch (step) {
       case 1:
-        return data.name && data.age && data.profession;
+        return data.name && data.email && data.profession;
       case 2:
-        return data.goals && data.timeline;
+        return data.experience && data.industry && data.currentSkills;
       case 3:
-        return data.currentSkills;
+        return data.goals && data.timeline && data.motivation;
+      case 4:
+        return data.learningStyle && data.weeklyHours;
       default:
         return false;
     }
@@ -138,9 +150,10 @@ const Onboarding = () => {
                 </div>
                 <Progress value={progress} className="h-3" />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span className={step >= 1 ? 'text-primary font-medium' : ''}>Personal Info</span>
-                  <span className={step >= 2 ? 'text-primary font-medium' : ''}>Goals</span>
-                  <span className={step >= 3 ? 'text-primary font-medium' : ''}>Skills</span>
+                  <span className={step >= 1 ? 'text-primary font-medium' : ''}>Personal</span>
+                  <span className={step >= 2 ? 'text-primary font-medium' : ''}>Background</span>
+                  <span className={step >= 3 ? 'text-primary font-medium' : ''}>Goals</span>
+                  <span className={step >= 4 ? 'text-primary font-medium' : ''}>Preferences</span>
                 </div>
               </div>
             </CardHeader>
@@ -168,34 +181,32 @@ const Onboarding = () => {
                     />
                   </div>
 
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="age" className="text-base font-semibold">
-                        Age
-                      </Label>
-                      <Input
-                        id="age"
-                        type="number"
-                        placeholder="25"
-                        value={data.age}
-                        onChange={(e) => handleChange('age', e.target.value)}
-                        className="h-12 text-base"
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-base font-semibold">
+                      Email Address
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="sarah@example.com"
+                      value={data.email}
+                      onChange={(e) => handleChange('email', e.target.value)}
+                      className="h-12 text-base"
+                    />
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="profession" className="text-base font-semibold flex items-center gap-2">
-                        <Briefcase className="h-4 w-4 text-primary" />
-                        Current Status
-                      </Label>
-                      <Input
-                        id="profession"
-                        placeholder="e.g., Software Engineer"
-                        value={data.profession}
-                        onChange={(e) => handleChange('profession', e.target.value)}
-                        className="h-12 text-base"
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="profession" className="text-base font-semibold flex items-center gap-2">
+                      <Briefcase className="h-4 w-4 text-primary" />
+                      Current Role / Position
+                    </Label>
+                    <Input
+                      id="profession"
+                      placeholder="e.g., Senior Product Manager"
+                      value={data.profession}
+                      onChange={(e) => handleChange('profession', e.target.value)}
+                      className="h-12 text-base"
+                    />
                   </div>
                 </div>
               )}
@@ -204,39 +215,51 @@ const Onboarding = () => {
                 <div className="space-y-5 animate-fade-in">
                   <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
                     <p className="text-sm text-muted-foreground">
-                      <span className="font-semibold text-foreground">🎯 Be specific:</span> The more detailed your goals, the better we can help you achieve them with actionable steps.
+                      <span className="font-semibold text-foreground">💼 Your Background:</span> Understanding your experience helps us tailor recommendations to your level.
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="goals" className="text-base font-semibold flex items-center gap-2">
-                      <Trophy className="h-4 w-4 text-primary" />
-                      What are your goals?
+                    <Label htmlFor="experience" className="text-base font-semibold flex items-center gap-2">
+                      <Briefcase className="h-4 w-4 text-primary" />
+                      Years of Professional Experience
                     </Label>
-                    <Textarea
-                      id="goals"
-                      placeholder="Example: I want to become a senior software engineer specializing in cloud architecture. I'd like to lead technical projects, mentor junior developers, and contribute to open-source communities..."
-                      value={data.goals}
-                      onChange={(e) => handleChange('goals', e.target.value)}
-                      rows={7}
-                      className="text-base resize-none"
+                    <Input
+                      id="experience"
+                      placeholder="e.g., 5 years"
+                      value={data.experience}
+                      onChange={(e) => handleChange('experience', e.target.value)}
+                      className="h-12 text-base"
                     />
-                    <p className="text-xs text-muted-foreground">Include career aspirations, skills you want to develop, and impact you want to make</p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="timeline" className="text-base font-semibold flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-primary" />
-                      Timeline for Achievement
+                    <Label htmlFor="industry" className="text-base font-semibold">
+                      Industry / Field
                     </Label>
                     <Input
-                      id="timeline"
-                      placeholder="e.g., 12 months, 2 years, 6 months"
-                      value={data.timeline}
-                      onChange={(e) => handleChange('timeline', e.target.value)}
+                      id="industry"
+                      placeholder="e.g., Technology, Healthcare, Finance"
+                      value={data.industry}
+                      onChange={(e) => handleChange('industry', e.target.value)}
                       className="h-12 text-base"
                     />
-                    <p className="text-xs text-muted-foreground">Be realistic - this helps us pace your action plan</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="currentSkills" className="text-base font-semibold flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      Current Skills & Expertise
+                    </Label>
+                    <Textarea
+                      id="currentSkills"
+                      placeholder="Example: Project management, Agile/Scrum methodologies, stakeholder communication, data analysis (SQL, Excel), team leadership, roadmap planning..."
+                      value={data.currentSkills}
+                      onChange={(e) => handleChange('currentSkills', e.target.value)}
+                      rows={6}
+                      className="text-base resize-none"
+                    />
+                    <p className="text-xs text-muted-foreground">List technical skills, soft skills, certifications, and key competencies</p>
                   </div>
                 </div>
               )}
@@ -245,24 +268,94 @@ const Onboarding = () => {
                 <div className="space-y-5 animate-fade-in">
                   <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
                     <p className="text-sm text-muted-foreground">
-                      <span className="font-semibold text-foreground">📚 Your foundation:</span> Understanding your current skills helps us create a learning path that builds on what you already know.
+                      <span className="font-semibold text-foreground">🎯 Be specific:</span> Clear goals help us create actionable steps and measure your progress effectively.
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="currentSkills" className="text-base font-semibold flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      Current Skills & Experience
+                    <Label htmlFor="goals" className="text-base font-semibold flex items-center gap-2">
+                      <Trophy className="h-4 w-4 text-primary" />
+                      Primary Goals & Objectives
                     </Label>
                     <Textarea
-                      id="currentSkills"
-                      placeholder="Example: 3 years of React and TypeScript development, basic AWS knowledge (S3, EC2), worked on e-commerce platforms, familiar with Agile methodologies, contributed to 2 open-source projects..."
-                      value={data.currentSkills}
-                      onChange={(e) => handleChange('currentSkills', e.target.value)}
-                      rows={7}
+                      id="goals"
+                      placeholder="Example: Transition into a VP of Product role within my organization, build expertise in AI/ML product development, expand my professional network with C-suite executives, and mentor emerging product leaders..."
+                      value={data.goals}
+                      onChange={(e) => handleChange('goals', e.target.value)}
+                      rows={6}
                       className="text-base resize-none"
                     />
-                    <p className="text-xs text-muted-foreground">Include technical skills, soft skills, certifications, and relevant experience</p>
+                    <p className="text-xs text-muted-foreground">Include career goals, skill development targets, and the impact you want to create</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="timeline" className="text-base font-semibold flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-primary" />
+                      Target Timeline
+                    </Label>
+                    <Input
+                      id="timeline"
+                      placeholder="e.g., 18 months"
+                      value={data.timeline}
+                      onChange={(e) => handleChange('timeline', e.target.value)}
+                      className="h-12 text-base"
+                    />
+                    <p className="text-xs text-muted-foreground">When do you want to achieve these goals?</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="motivation" className="text-base font-semibold">
+                      What motivates you?
+                    </Label>
+                    <Textarea
+                      id="motivation"
+                      placeholder="Example: I want to make a bigger impact on product strategy and company direction. I'm driven by solving complex problems and helping others grow..."
+                      value={data.motivation}
+                      onChange={(e) => handleChange('motivation', e.target.value)}
+                      rows={4}
+                      className="text-base resize-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {step === 4 && (
+                <div className="space-y-5 animate-fade-in">
+                  <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-semibold text-foreground">📚 Personalized Learning:</span> Your preferences help us recommend the most effective resources and schedule for you.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="learningStyle" className="text-base font-semibold flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      Preferred Learning Style
+                    </Label>
+                    <Textarea
+                      id="learningStyle"
+                      placeholder="Example: I learn best through hands-on projects and practical applications. I prefer video tutorials over reading documentation, and I like to learn with others in study groups..."
+                      value={data.learningStyle}
+                      onChange={(e) => handleChange('learningStyle', e.target.value)}
+                      rows={5}
+                      className="text-base resize-none"
+                    />
+                    <p className="text-xs text-muted-foreground">E.g., video courses, reading, hands-on practice, mentorship, group learning</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="weeklyHours" className="text-base font-semibold flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-primary" />
+                      Weekly Commitment
+                    </Label>
+                    <Input
+                      id="weeklyHours"
+                      placeholder="e.g., 10 hours per week"
+                      value={data.weeklyHours}
+                      onChange={(e) => handleChange('weeklyHours', e.target.value)}
+                      className="h-12 text-base"
+                    />
+                    <p className="text-xs text-muted-foreground">How many hours per week can you dedicate to learning and development?</p>
                   </div>
                 </div>
               )}

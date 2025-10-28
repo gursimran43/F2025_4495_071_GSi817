@@ -7,8 +7,19 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Target, LogOut, TrendingUp, CheckCircle2, Award, Zap, BookOpen, Rocket,
+  Users, Calendar, FileText, BarChart3, PieChart, Activity, Clock, Brain,
+  Lightbulb, Star, ArrowUpRight, ArrowDownRight, Minus, Mail, Github, Linkedin,
+  ExternalLink, MessageCircle, Globe2, Layers, GraduationCap
+} from 'lucide-react';
+import {
+  LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RePieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart,
+  PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
+} from 'recharts';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Target, LogOut, TrendingUp, CheckCircle2, Award, Zap, BookOpen, Rocket, Users, Calendar, Mail, Github, Linkedin, FileText, ExternalLink, MessageCircle, Globe2 } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -37,6 +48,48 @@ interface CertificationPath {
   link: string;
   focusAreas: string[];
 }
+
+// Mock data for analytics
+const generateProgressData = () => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  return months.map((month, index) => ({
+    month,
+    progress: Math.min((index + 1) * 15 + Math.random() * 10, 100),
+    tasksCompleted: Math.floor((index + 1) * 2 + Math.random() * 3),
+    hoursSpent: Math.floor(15 + index * 5 + Math.random() * 10),
+  }));
+};
+
+const generateWeeklyActivity = () => {
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  return days.map(day => ({
+    day,
+    hours: Math.floor(Math.random() * 5) + 1,
+    tasks: Math.floor(Math.random() * 4) + 1,
+  }));
+};
+
+const generateSkillsData = () => {
+  return [
+    { skill: 'Leadership', current: 75, target: 90 },
+    { skill: 'Technical', current: 65, target: 85 },
+    { skill: 'Communication', current: 80, target: 95 },
+    { skill: 'Strategy', current: 70, target: 90 },
+    { skill: 'Analytics', current: 60, target: 80 },
+  ];
+};
+
+const generateCategoryData = () => {
+  return [
+    { name: 'Technical', value: 35 },
+    { name: 'Soft Skills', value: 25 },
+    { name: 'Leadership', value: 20 },
+    { name: 'Analytics', value: 15 },
+    { name: 'Other', value: 5 },
+  ];
+};
+
+const COLORS = ['hsl(221, 83%, 53%)', 'hsl(142, 76%, 36%)', 'hsl(48, 96%, 53%)', 'hsl(0, 84%, 60%)', 'hsl(280, 65%, 60%)'];
 
 const certificationPaths: CertificationPath[] = [
   {
@@ -145,13 +198,74 @@ const communityHubs: CommunityHub[] = [
   },
 ];
 
+interface CourseOption {
+  id: string;
+  title: string;
+  provider: string;
+  format: string;
+  level: string;
+  duration: string;
+  price: string;
+  description: string;
+  link: string;
+  outcomes: string[];
+  bonuses: string[];
+}
+
+const courseCatalog: CourseOption[] = [
+  {
+    id: 'educative-system-design',
+    title: 'Grokking Advanced System Design',
+    provider: 'Educative.io',
+    format: 'Interactive lessons + visuals',
+    level: 'Intermediate–Advanced',
+    duration: '6-8 weeks',
+    price: '$79/mo or $199 yearly',
+    description: 'Deep dives into multi-region architectures, event-driven patterns, and tradeoff analysis with curated practice prompts.',
+    link: 'https://www.educative.io/path/grokking-advanced-system-design',
+    outcomes: ['Multi-region design drills', 'Capacity planning worksheets', 'Interview-ready diagrams'],
+    bonuses: ['Downloadable templates', 'Weekly office hours', 'Progress analytics'],
+  },
+  {
+    id: 'exponent-masterclass',
+    title: 'Exponent System Design Masterclass',
+    provider: 'Exponent',
+    format: 'Live cohort + on-demand library',
+    level: 'Mid/Senior ICs',
+    duration: '4-week cohort',
+    price: '$399 per seat',
+    description: 'Instructor-led breakdowns of FAANG-style prompts with peer review, mock interviews, and personalized feedback.',
+    link: 'https://www.tryexponent.com/courses/system-design',
+    outcomes: ['Instructor feedback', 'Mock interview bank', 'Peer review circles'],
+    bonuses: ['Community slack', 'Resume review', 'Lifetime recordings'],
+  },
+  {
+    id: 'udacity-nanodegree',
+    title: 'Udacity Cloud Developer Nanodegree',
+    provider: 'Udacity',
+    format: 'Project-based curriculum',
+    level: 'Career switchers',
+    duration: '4 months (10hrs/wk)',
+    price: '$399/mo',
+    description: 'Hands-on projects covering cloud-native APIs, observability, and deployment pipelines mapped to AWS Associate-level roles.',
+    link: 'https://www.udacity.com/course/cloud-developer-nanodegree--nd9990',
+    outcomes: ['Deployed capstone', 'Code reviews', 'Career services'],
+    bonuses: ['1:1 mentor calls', 'GitHub portfolio audit', 'Hiring partner webinars'],
+  },
+];
+
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [progressData] = useState(generateProgressData());
+  const [weeklyData] = useState(generateWeeklyActivity());
+  const [skillsData] = useState(generateSkillsData());
+  const [categoryData] = useState(generateCategoryData());
   const [isCertificationDialogOpen, setIsCertificationDialogOpen] = useState(false);
   const [isCommunityDialogOpen, setIsCommunityDialogOpen] = useState(false);
+  const [isCourseDialogOpen, setIsCourseDialogOpen] = useState(false);
 
   useEffect(() => {
     // Generate AI tasks based on onboarding data
@@ -343,6 +457,8 @@ const Dashboard = () => {
       setIsCertificationDialogOpen(true);
     } else if (rec.title === 'Join Tech Communities') {
       setIsCommunityDialogOpen(true);
+    } else if (rec.title === 'Advanced System Design Course') {
+      setIsCourseDialogOpen(true);
     }
   };
 
@@ -493,8 +609,251 @@ const Dashboard = () => {
             </Card>
           </div>
 
+          {/* Analytics Section */}
+          <Card className="border-2 shadow-xl mt-4">
+            <CardHeader className="pb-4">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1 min-w-0">
+                  <CardTitle className="text-lg sm:text-2xl flex items-center gap-2">
+                    <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg flex-shrink-0">
+                      <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    </div>
+                    <span className="truncate">Detailed Analytics</span>
+                  </CardTitle>
+                  <CardDescription className="text-sm sm:text-base">
+                    Track your progress and performance
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="overview" className="space-y-4">
+                <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+                  <TabsTrigger value="overview" className="gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Overview</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="progress" className="gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    <span className="hidden sm:inline">Progress</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="activity" className="gap-2">
+                    <Activity className="h-4 w-4" />
+                    <span className="hidden sm:inline">Activity</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="skills" className="gap-2">
+                    <Brain className="h-4 w-4" />
+                    <span className="hidden sm:inline">Skills</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="overview" className="space-y-4">
+                  <div className="grid lg:grid-cols-2 gap-4">
+                    {/* Progress Over Time */}
+                    <Card className="border-2">
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <TrendingUp className="h-5 w-5 text-primary" />
+                          Progress Trend
+                        </CardTitle>
+                        <CardDescription>Your journey over the last 6 months</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <AreaChart data={progressData}>
+                            <defs>
+                              <linearGradient id="colorProgress" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                            <XAxis dataKey="month" className="text-xs" />
+                            <YAxis className="text-xs" />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'hsl(var(--card))',
+                                border: '1px solid hsl(var(--border))',
+                                borderRadius: '8px'
+                              }}
+                            />
+                            <Area
+                              type="monotone"
+                              dataKey="progress"
+                              stroke="hsl(221, 83%, 53%)"
+                              fillOpacity={1}
+                              fill="url(#colorProgress)"
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+
+                    {/* Category Distribution */}
+                    <Card className="border-2">
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <PieChart className="h-5 w-5 text-primary" />
+                          Task Distribution
+                        </CardTitle>
+                        <CardDescription>Tasks by category</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <RePieChart>
+                            <Pie
+                              data={categoryData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                              outerRadius={80}
+                              fill="#8884d8"
+                              dataKey="value"
+                            >
+                              {categoryData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: 'hsl(var(--card))',
+                                border: '1px solid hsl(var(--border))',
+                                borderRadius: '8px'
+                              }}
+                            />
+                          </RePieChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="progress" className="space-y-4">
+                  <Card className="border-2">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Activity className="h-5 w-5 text-primary" />
+                        Completion Rate & Hours
+                      </CardTitle>
+                      <CardDescription>Tasks completed and hours invested monthly</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={350}>
+                        <LineChart data={progressData}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                          <XAxis dataKey="month" />
+                          <YAxis yAxisId="left" />
+                          <YAxis yAxisId="right" orientation="right" />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                          />
+                          <Legend />
+                          <Line
+                            yAxisId="left"
+                            type="monotone"
+                            dataKey="tasksCompleted"
+                            stroke="hsl(221, 83%, 53%)"
+                            strokeWidth={2}
+                            name="Tasks Completed"
+                          />
+                          <Line
+                            yAxisId="right"
+                            type="monotone"
+                            dataKey="hoursSpent"
+                            stroke="hsl(142, 76%, 36%)"
+                            strokeWidth={2}
+                            name="Hours Invested"
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="activity" className="space-y-4">
+                  <Card className="border-2">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-primary" />
+                        Weekly Activity
+                      </CardTitle>
+                      <CardDescription>Your engagement this week</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={350}>
+                        <BarChart data={weeklyData}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                          <XAxis dataKey="day" />
+                          <YAxis />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                          />
+                          <Legend />
+                          <Bar dataKey="hours" fill="hsl(221, 83%, 53%)" name="Hours Spent" radius={[8, 8, 0, 0]} />
+                          <Bar dataKey="tasks" fill="hsl(142, 76%, 36%)" name="Tasks Completed" radius={[8, 8, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="skills" className="space-y-4">
+                  <Card className="border-2">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Brain className="h-5 w-5 text-primary" />
+                        Skills Development
+                      </CardTitle>
+                      <CardDescription>Current level vs. target competency</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={350}>
+                        <RadarChart data={skillsData}>
+                          <PolarGrid className="stroke-border" />
+                          <PolarAngleAxis dataKey="skill" className="text-xs" />
+                          <PolarRadiusAxis angle={90} domain={[0, 100]} />
+                          <Radar
+                            name="Current Level"
+                            dataKey="current"
+                            stroke="hsl(221, 83%, 53%)"
+                            fill="hsl(221, 83%, 53%)"
+                            fillOpacity={0.5}
+                          />
+                          <Radar
+                            name="Target Level"
+                            dataKey="target"
+                            stroke="hsl(142, 76%, 36%)"
+                            fill="hsl(142, 76%, 36%)"
+                            fillOpacity={0.3}
+                          />
+                          <Legend />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                          />
+                        </RadarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+
           {/* Progress Overview */}
-          <Card className="border-2 shadow-xl animate-slide-in-right">
+          <Card className="border-2 shadow-xl animate-slide-in-right mt-8">
             <CardHeader className="space-y-3 sm:space-y-1 pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="space-y-1 min-w-0">
@@ -719,6 +1078,8 @@ const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Footer */}
         </div>
       </div>
 
@@ -873,6 +1234,108 @@ const Dashboard = () => {
                   </p>
                   <p className="text-xs sm:text-sm text-muted-foreground">
                     Pair these certifications with 1-2 hours of lab time per day and keep track of milestones right inside your GoalFlow dashboard.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCourseDialogOpen} onOpenChange={setIsCourseDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto border-2">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="flex items-center gap-2 text-left text-xl sm:text-2xl">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <GraduationCap className="h-5 w-5 text-primary" />
+              </div>
+              System Design Learning Paths
+            </DialogTitle>
+            <DialogDescription className="text-sm sm:text-base">
+              Compare curated courses and enroll directly in the track that matches your schedule, budget, and preferred learning style.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+              {courseCatalog.map((course) => (
+                <Card key={course.id} className="border-2 bg-card/95 flex flex-col h-full">
+                  <CardHeader className="space-y-2 pb-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <CardTitle className="text-base sm:text-lg text-foreground flex-1">
+                        {course.title}
+                      </CardTitle>
+                      <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                        {course.provider}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="text-xs bg-primary/5 border-primary/30">
+                        {course.level}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {course.duration}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs bg-muted/60">
+                        {course.format}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3 flex-1 flex flex-col">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {course.description}
+                    </p>
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        Key outcomes
+                      </p>
+                      <ul className="text-sm text-foreground/80 space-y-1 list-disc pl-4">
+                        {course.outcomes.map((outcome) => (
+                          <li key={`${course.id}-${outcome}`}>{outcome}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        Extras
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {course.bonuses.map((bonus) => (
+                          <Badge
+                            key={`${course.id}-${bonus}`}
+                            variant="outline"
+                            className="text-xs bg-accent/10 border-accent/30"
+                          >
+                            {bonus}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between flex-wrap gap-2 pt-2">
+                      <span className="text-sm font-semibold text-primary">{course.price}</span>
+                      <Button asChild variant="secondary" className="gap-2 text-sm">
+                        <a href={course.link} target="_blank" rel="noreferrer" className="flex items-center">
+                          Enroll now
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <Card className="border border-dashed border-primary/40 bg-primary/5">
+              <CardContent className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center py-4">
+                <div className="p-3 bg-background rounded-2xl">
+                  <Layers className="h-6 w-6 text-primary" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm sm:text-base font-semibold text-foreground">
+                    Stack your learning sprints
+                  </p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Pair an interactive course with weekly mock design sessions in your community dialog to apply concepts immediately.
                   </p>
                 </div>
               </CardContent>

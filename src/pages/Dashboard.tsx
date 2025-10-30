@@ -805,7 +805,6 @@ const Dashboard = () => {
                     </CardContent>
                   </Card>
                 </TabsContent>
-
                 <TabsContent value="skills" className="space-y-4">
                   <Card className="border-2">
                     <CardHeader>

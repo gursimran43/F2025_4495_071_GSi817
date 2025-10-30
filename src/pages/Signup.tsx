@@ -33,7 +33,7 @@ const Signup = () => {
 
     try {
       await signup(email, password);
-      navigate('/dashboard');
+      navigate('/onboarding');
     } catch (error) {
       toast({
         variant: 'destructive',

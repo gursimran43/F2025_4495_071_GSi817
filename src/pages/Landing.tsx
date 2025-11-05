@@ -1,11 +1,23 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Target, TrendingUp, CheckCircle2, Zap, Users, Award, Clock, ArrowRight, Sparkles, Shield } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Landing = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    if (user) {
+      navigate('/onboarding');
+    } else {
+      navigate('/signup');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -25,17 +37,17 @@ const Landing = () => {
             Transform your ambitions into actionable steps. Get personalized goal plans and track your progress with intelligent recommendations.
           </p>
           <div className="flex items-center justify-center gap-4 pt-4">
-            <Link to="/signup">
-              <Button size="lg" className="h-14 px-10 text-lg group">
-                Get Started Free
-                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </Link>
-            <Link to="/login">
-              <Button size="lg" variant="outline" className="h-14 px-10 text-lg">
-                Sign In
-              </Button>
-            </Link>
+            <Button size="lg" className="h-14 px-10 text-lg group" onClick={handleGetStarted}>
+              Get Started Free
+              <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+            </Button>
+            {!user && (
+              <Link to="/login">
+                <Button size="lg" variant="outline" className="h-14 px-10 text-lg">
+                  Sign In
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Stats */}
@@ -269,12 +281,10 @@ const Landing = () => {
             </p>
           </div>
           <div className="flex items-center justify-center gap-4">
-            <Link to="/signup">
-              <Button size="lg" className="h-14 px-10 text-lg group">
-                Start Free Today
-                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </Link>
+            <Button size="lg" className="h-14 px-10 text-lg group" onClick={handleGetStarted}>
+              Start Free Today
+              <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+            </Button>
           </div>
           <p className="text-sm text-muted-foreground">No credit card required • Free forever plan available</p>
         </div>

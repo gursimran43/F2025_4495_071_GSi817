@@ -10,6 +10,8 @@ import { Progress } from '@/components/ui/progress';
 import { Target, User, Briefcase, Trophy, Clock, Sparkles, ArrowRight } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { api } from '@/services/api';
+import { toast } from '@/hooks/use-toast';
 
 interface OnboardingData {
   name: string;
@@ -27,6 +29,7 @@ interface OnboardingData {
 
 const Onboarding = () => {
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [data, setData] = useState<OnboardingData>({
     name: '',
     email: '',
@@ -62,13 +65,42 @@ const Onboarding = () => {
     }
   };
 
-  const handleSubmit = () => {
-    // Save onboarding data
-    localStorage.setItem('onboardingData', JSON.stringify(data));
-    if (updateUser) {
-      updateUser({ name: data.name, onboardingComplete: true });
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const response = await api.completeOnboarding(data);
+
+      if (response.success) {
+        // Update user onboarding status
+        await updateUser({ onboardingComplete: true });
+
+        // Save onboarding data to localStorage for reference
+        localStorage.setItem('onboardingData', JSON.stringify(data));
+
+        toast({
+          title: "Success!",
+          description: response.message || "Your personalized plan has been generated!",
+        });
+
+        // Navigate to generating plan page
+        navigate('/generating-plan');
+      } else {
+        toast({
+          title: "Error",
+          description: response.message || "Failed to complete onboarding. Please try again.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+      }
+    } catch (error) {
+      console.error('Onboarding error:', error);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
     }
-    navigate('/generating-plan');
   };
 
   const isStepValid = () => {
@@ -382,11 +414,11 @@ const Onboarding = () => {
                 ) : (
                   <Button
                     onClick={handleSubmit}
-                    disabled={!isStepValid()}
+                    disabled={!isStepValid() || isSubmitting}
                     size="lg"
                     className="gap-2 min-w-40"
                   >
-                    Complete Setup
+                    {isSubmitting ? "Generating Plan..." : "Complete Setup"}
                     <Sparkles className="h-4 w-4" />
                   </Button>
                 )}

@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { api } from '@/services/api';
+import { toast } from '@/hooks/use-toast';
 
 interface User {
   id: string;
@@ -9,81 +11,130 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, name?: string) => Promise<void>;
   logout: () => void;
-  updateUser: (userData: Partial<User>) => void;
+  updateUser: (userData: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    const initAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await api.getMe();
+          if (response.success && response.data) {
+            setUser(response.data.user);
+          } else {
+            localStorage.removeItem('token');
+          }
+        } catch (error) {
+          localStorage.removeItem('token');
+        }
+      }
+      setLoading(false);
+    };
+
+    initAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
-    // Mock login - accept any credentials
-    const mockUser = {
-      id: Math.random().toString(36).substr(2, 9),
-      email,
-      onboardingComplete: true,
-    };
+    try {
+      const response = await api.login(email, password);
 
-    setUser(mockUser);
-    localStorage.setItem('user', JSON.stringify(mockUser));
+      if (!response.success || !response.data) {
+        throw new Error(response.message || 'Login failed');
+      }
+
+      const { user: userData, token } = response.data;
+      setUser(userData);
+      localStorage.setItem('token', token);
+
+      toast({
+        title: 'Welcome back!',
+        description: response.message || 'Login successful',
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Login failed';
+      toast({
+        title: 'Login failed',
+        description: message,
+        variant: 'destructive',
+      });
+      throw error;
+    }
   };
 
-  const signup = async (email: string, password: string) => {
-    // Check if user already exists
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    if (users.some((u: any) => u.email === email)) {
-      throw new Error('User already exists');
+  const signup = async (email: string, password: string, name?: string) => {
+    try {
+      const response = await api.signup(email, password, name);
+
+      if (!response.success || !response.data) {
+        throw new Error(response.message || 'Signup failed');
+      }
+
+      const { user: userData, token } = response.data;
+      setUser(userData);
+      localStorage.setItem('token', token);
+
+      toast({
+        title: 'Account created!',
+        description: response.message || 'User registered successfully',
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Signup failed';
+      toast({
+        title: 'Signup failed',
+        description: message,
+        variant: 'destructive',
+      });
+      throw error;
     }
-
-    const newUser = {
-      id: Math.random().toString(36).substr(2, 9),
-      email,
-      password,
-      onboardingComplete: false,
-    };
-
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-
-    const { password: _, ...userWithoutPassword } = newUser;
-    setUser(userWithoutPassword);
-    localStorage.setItem('user', JSON.stringify(userWithoutPassword));
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    toast({
+      title: 'Logged out',
+      description: 'You have been logged out successfully',
+    });
   };
 
-  const updateUser = (userData: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...userData };
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+  const updateUser = async (userData: Partial<User>) => {
+    try {
+      const response = await api.updateProfile(userData);
 
-      // Update in users array
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const index = users.findIndex((u: any) => u.id === user.id);
-      if (index !== -1) {
-        users[index] = { ...users[index], ...userData };
-        localStorage.setItem('users', JSON.stringify(users));
+      if (!response.success || !response.data) {
+        throw new Error(response.message || 'Update failed');
       }
+
+      setUser(response.data.user);
+
+      toast({
+        title: 'Profile updated',
+        description: response.message || 'Profile updated successfully',
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Update failed';
+      toast({
+        title: 'Update failed',
+        description: message,
+        variant: 'destructive',
+      });
+      throw error;
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

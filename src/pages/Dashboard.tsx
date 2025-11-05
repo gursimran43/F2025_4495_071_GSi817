@@ -20,22 +20,31 @@ import {
   PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from 'recharts';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { api } from '@/services/api';
+import { toast } from '@/hooks/use-toast';
 
 interface Task {
-  id: string;
+  _id?: string;
+  id?: string;
   title: string;
   description: string;
   completed: boolean;
   percentage: number;
   priority: 'high' | 'medium' | 'low';
   category: string;
+  aiGenerated?: boolean;
 }
 
 interface Recommendation {
-  id: string;
+  _id?: string;
+  id?: string;
   title: string;
   description: string;
   type: 'course' | 'project' | 'certification' | 'network';
+  relevance?: string;
+  dismissed?: boolean;
+  clicked?: boolean;
+  aiGenerated?: boolean;
 }
 
 interface CertificationPath {
@@ -89,7 +98,7 @@ const generateCategoryData = () => {
   ];
 };
 
-const COLORS = ['hsl(221, 83%, 53%)', 'hsl(142, 76%, 36%)', 'hsl(48, 96%, 53%)', 'hsl(0, 84%, 60%)', 'hsl(280, 65%, 60%)'];
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 const certificationPaths: CertificationPath[] = [
   {
@@ -259,6 +268,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [progressData] = useState(generateProgressData());
   const [weeklyData] = useState(generateWeeklyActivity());
   const [skillsData] = useState(generateSkillsData());
@@ -268,34 +278,76 @@ const Dashboard = () => {
   const [isCourseDialogOpen, setIsCourseDialogOpen] = useState(false);
 
   useEffect(() => {
-    // Generate AI tasks based on onboarding data
-    const onboardingData = JSON.parse(localStorage.getItem('onboardingData') || '{}');
-    const storedTasks = localStorage.getItem('userTasks');
+    fetchTasks();
+    loadRecommendations();
+  }, []);
 
-    if (storedTasks) {
-      const parsedTasks = JSON.parse(storedTasks);
-      // Migrate old tasks to include percentage field
-      const migratedTasks = parsedTasks.map((task: Task) => ({
-        ...task,
-        percentage: task.percentage ?? (task.completed ? 100 : 0)
-      }));
-      setTasks(migratedTasks);
-      localStorage.setItem('userTasks', JSON.stringify(migratedTasks));
-    } else {
+  const fetchTasks = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.getTasks();
+
+      if (response.success && response.data) {
+        const tasksWithId = response.data.tasks.map(task => ({
+          ...task,
+          id: task._id || '',
+          completed: task.completed ?? false,
+          percentage: task.percentage ?? 0,
+        }));
+        setTasks(tasksWithId);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to load tasks",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load tasks. Using local fallback.",
+        variant: "destructive",
+      });
+      // Fallback to generated tasks
+      const onboardingData = JSON.parse(localStorage.getItem('onboardingData') || '{}');
       const generatedTasks = generateTasks(onboardingData);
       setTasks(generatedTasks);
-      localStorage.setItem('userTasks', JSON.stringify(generatedTasks));
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    const storedRecs = localStorage.getItem('userRecommendations');
-    if (storedRecs) {
-      setRecommendations(JSON.parse(storedRecs));
-    } else {
-      const generatedRecs = generateRecommendations(onboardingData);
-      setRecommendations(generatedRecs);
-      localStorage.setItem('userRecommendations', JSON.stringify(generatedRecs));
+  const loadRecommendations = async () => {
+    try {
+      const response = await api.getRecommendations({ dismissed: false });
+      if (response.success && response.data) {
+        const recsWithId = response.data.recommendations.map(rec => ({
+          ...rec,
+          id: rec._id || rec.title,
+        }));
+        setRecommendations(recsWithId);
+      } else {
+        // Fallback to localStorage
+        const storedRecs = localStorage.getItem('userRecommendations');
+        if (storedRecs) {
+          setRecommendations(JSON.parse(storedRecs));
+        } else {
+          const onboardingData = JSON.parse(localStorage.getItem('onboardingData') || '{}');
+          const generatedRecs = generateRecommendations(onboardingData);
+          setRecommendations(generatedRecs);
+          localStorage.setItem('userRecommendations', JSON.stringify(generatedRecs));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading recommendations:', error);
+      // Fallback to localStorage
+      const storedRecs = localStorage.getItem('userRecommendations');
+      if (storedRecs) {
+        setRecommendations(JSON.parse(storedRecs));
+      }
     }
-  }, []);
+  };
 
   const generateTasks = (data: any): Task[] => {
     const baseId = Date.now();
@@ -404,20 +456,52 @@ const Dashboard = () => {
     ];
   };
 
-  const toggleTask = (taskId: string) => {
-    const updatedTasks = tasks.map((task) =>
-      task.id === taskId ? { ...task, completed: !task.completed, percentage: !task.completed ? 100 : task.percentage } : task
-    );
-    setTasks(updatedTasks);
-    localStorage.setItem('userTasks', JSON.stringify(updatedTasks));
+  const toggleTask = async (taskId: string) => {
+    try {
+      const response = await api.toggleTaskCompletion(taskId);
+      if (response.success && response.data) {
+        const updatedTask = {
+          ...response.data.task,
+          id: response.data.task._id || taskId,
+          completed: response.data.task.completed ?? false,
+          percentage: response.data.task.percentage ?? 0,
+        };
+        setTasks(tasks.map(task => task.id === taskId ? updatedTask : task));
+        toast({
+          title: updatedTask.completed ? "Task Completed!" : "Task Uncompleted",
+          description: updatedTask.title,
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling task:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update task",
+        variant: "destructive",
+      });
+    }
   };
 
-  const updateTaskPercentage = (taskId: string, percentage: number) => {
-    const updatedTasks = tasks.map((task) =>
-      task.id === taskId ? { ...task, percentage, completed: percentage === 100 } : task
-    );
-    setTasks(updatedTasks);
-    localStorage.setItem('userTasks', JSON.stringify(updatedTasks));
+  const updateTaskPercentage = async (taskId: string, percentage: number) => {
+    try {
+      const response = await api.updateTaskProgress(taskId, percentage);
+      if (response.success && response.data) {
+        const updatedTask = {
+          ...response.data.task,
+          id: response.data.task._id || taskId,
+          completed: response.data.task.completed ?? false,
+          percentage: response.data.task.percentage ?? 0,
+        };
+        setTasks(tasks.map(task => task.id === taskId ? updatedTask : task));
+      }
+    } catch (error) {
+      console.error('Error updating task progress:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update task progress",
+        variant: "destructive",
+      });
+    }
   };
 
   const completedCount = tasks.filter((t) => t.completed).length;
@@ -452,13 +536,44 @@ const Dashboard = () => {
     }
   };
 
-  const handleRecommendationClick = (rec: Recommendation) => {
+  const handleRecommendationClick = async (rec: Recommendation) => {
+    // Track click
+    if (rec._id || rec.id) {
+      try {
+        await api.clickRecommendation(rec._id || rec.id!);
+      } catch (error) {
+        console.error('Error tracking recommendation click:', error);
+      }
+    }
+
     if (rec.title === 'AWS Solutions Architect Certification') {
       setIsCertificationDialogOpen(true);
     } else if (rec.title === 'Join Tech Communities') {
       setIsCommunityDialogOpen(true);
     } else if (rec.title === 'Advanced System Design Course') {
       setIsCourseDialogOpen(true);
+    }
+  };
+
+  const handleDismissRecommendation = async (recId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent card click
+    try {
+      const response = await api.dismissRecommendation(recId);
+      if (response.success) {
+        setRecommendations(recommendations.filter(rec => (rec._id || rec.id) !== recId));
+        toast({
+          title: "Recommendation dismissed",
+          description: "You can view dismissed items in your settings",
+        });
+      }
+    } catch (error) {
+      console.error('Error dismissing recommendation:', error);
+      // Fallback: remove locally
+      setRecommendations(recommendations.filter(rec => (rec._id || rec.id) !== recId));
+      toast({
+        title: "Recommendation dismissed",
+        description: "Removed from your feed",
+      });
     }
   };
 
@@ -663,24 +778,33 @@ const Dashboard = () => {
                           <AreaChart data={progressData}>
                             <defs>
                               <linearGradient id="colorProgress" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0} />
+                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                               </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                            <XAxis dataKey="month" className="text-xs" />
-                            <YAxis className="text-xs" />
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(128, 128, 128, 0.2)" />
+                            <XAxis
+                              dataKey="month"
+                              stroke="currentColor"
+                              style={{ fontSize: '12px' }}
+                            />
+                            <YAxis
+                              stroke="currentColor"
+                              style={{ fontSize: '12px' }}
+                            />
                             <Tooltip
                               contentStyle={{
-                                backgroundColor: 'hsl(var(--card))',
-                                border: '1px solid hsl(var(--border))',
-                                borderRadius: '8px'
+                                backgroundColor: 'white',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '8px',
+                                color: '#000'
                               }}
                             />
                             <Area
                               type="monotone"
                               dataKey="progress"
-                              stroke="hsl(221, 83%, 53%)"
+                              stroke="#3b82f6"
+                              strokeWidth={2}
                               fillOpacity={1}
                               fill="url(#colorProgress)"
                             />
@@ -705,11 +829,13 @@ const Dashboard = () => {
                               data={categoryData}
                               cx="50%"
                               cy="50%"
-                              labelLine={false}
+                              labelLine={true}
                               label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                              outerRadius={80}
+                              outerRadius={90}
                               fill="#8884d8"
                               dataKey="value"
+                              stroke="#fff"
+                              strokeWidth={2}
                             >
                               {categoryData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -717,11 +843,13 @@ const Dashboard = () => {
                             </Pie>
                             <Tooltip
                               contentStyle={{
-                                backgroundColor: 'hsl(var(--card))',
-                                border: '1px solid hsl(var(--border))',
-                                borderRadius: '8px'
+                                backgroundColor: 'white',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '8px',
+                                color: '#000'
                               }}
                             />
+                            <Legend />
                           </RePieChart>
                         </ResponsiveContainer>
                       </CardContent>
@@ -741,15 +869,29 @@ const Dashboard = () => {
                     <CardContent>
                       <ResponsiveContainer width="100%" height={350}>
                         <LineChart data={progressData}>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                          <XAxis dataKey="month" />
-                          <YAxis yAxisId="left" />
-                          <YAxis yAxisId="right" orientation="right" />
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(128, 128, 128, 0.2)" />
+                          <XAxis
+                            dataKey="month"
+                            stroke="currentColor"
+                            style={{ fontSize: '12px' }}
+                          />
+                          <YAxis
+                            yAxisId="left"
+                            stroke="currentColor"
+                            style={{ fontSize: '12px' }}
+                          />
+                          <YAxis
+                            yAxisId="right"
+                            orientation="right"
+                            stroke="currentColor"
+                            style={{ fontSize: '12px' }}
+                          />
                           <Tooltip
                             contentStyle={{
-                              backgroundColor: 'hsl(var(--card))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '8px'
+                              backgroundColor: 'white',
+                              border: '1px solid #e5e7eb',
+                              borderRadius: '8px',
+                              color: '#000'
                             }}
                           />
                           <Legend />
@@ -757,17 +899,21 @@ const Dashboard = () => {
                             yAxisId="left"
                             type="monotone"
                             dataKey="tasksCompleted"
-                            stroke="hsl(221, 83%, 53%)"
-                            strokeWidth={2}
+                            stroke="#3b82f6"
+                            strokeWidth={3}
                             name="Tasks Completed"
+                            dot={{ fill: '#3b82f6', r: 4 }}
+                            activeDot={{ r: 6 }}
                           />
                           <Line
                             yAxisId="right"
                             type="monotone"
                             dataKey="hoursSpent"
-                            stroke="hsl(142, 76%, 36%)"
-                            strokeWidth={2}
+                            stroke="#10b981"
+                            strokeWidth={3}
                             name="Hours Invested"
+                            dot={{ fill: '#10b981', r: 4 }}
+                            activeDot={{ r: 6 }}
                           />
                         </LineChart>
                       </ResponsiveContainer>
@@ -787,19 +933,37 @@ const Dashboard = () => {
                     <CardContent>
                       <ResponsiveContainer width="100%" height={350}>
                         <BarChart data={weeklyData}>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                          <XAxis dataKey="day" />
-                          <YAxis />
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(128, 128, 128, 0.2)" />
+                          <XAxis
+                            dataKey="day"
+                            stroke="currentColor"
+                            style={{ fontSize: '12px' }}
+                          />
+                          <YAxis
+                            stroke="currentColor"
+                            style={{ fontSize: '12px' }}
+                          />
                           <Tooltip
                             contentStyle={{
-                              backgroundColor: 'hsl(var(--card))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '8px'
+                              backgroundColor: 'white',
+                              border: '1px solid #e5e7eb',
+                              borderRadius: '8px',
+                              color: '#000'
                             }}
                           />
                           <Legend />
-                          <Bar dataKey="hours" fill="hsl(221, 83%, 53%)" name="Hours Spent" radius={[8, 8, 0, 0]} />
-                          <Bar dataKey="tasks" fill="hsl(142, 76%, 36%)" name="Tasks Completed" radius={[8, 8, 0, 0]} />
+                          <Bar
+                            dataKey="hours"
+                            fill="#3b82f6"
+                            name="Hours Spent"
+                            radius={[8, 8, 0, 0]}
+                          />
+                          <Bar
+                            dataKey="tasks"
+                            fill="#10b981"
+                            name="Tasks Completed"
+                            radius={[8, 8, 0, 0]}
+                          />
                         </BarChart>
                       </ResponsiveContainer>
                     </CardContent>
@@ -817,29 +981,41 @@ const Dashboard = () => {
                     <CardContent>
                       <ResponsiveContainer width="100%" height={350}>
                         <RadarChart data={skillsData}>
-                          <PolarGrid className="stroke-border" />
-                          <PolarAngleAxis dataKey="skill" className="text-xs" />
-                          <PolarRadiusAxis angle={90} domain={[0, 100]} />
+                          <PolarGrid stroke="rgba(128, 128, 128, 0.2)" />
+                          <PolarAngleAxis
+                            dataKey="skill"
+                            stroke="currentColor"
+                            style={{ fontSize: '12px' }}
+                          />
+                          <PolarRadiusAxis
+                            angle={90}
+                            domain={[0, 100]}
+                            stroke="currentColor"
+                            style={{ fontSize: '10px' }}
+                          />
                           <Radar
                             name="Current Level"
                             dataKey="current"
-                            stroke="hsl(221, 83%, 53%)"
-                            fill="hsl(221, 83%, 53%)"
+                            stroke="#3b82f6"
+                            fill="#3b82f6"
                             fillOpacity={0.5}
+                            strokeWidth={2}
                           />
                           <Radar
                             name="Target Level"
                             dataKey="target"
-                            stroke="hsl(142, 76%, 36%)"
-                            fill="hsl(142, 76%, 36%)"
+                            stroke="#10b981"
+                            fill="#10b981"
                             fillOpacity={0.3}
+                            strokeWidth={2}
                           />
                           <Legend />
                           <Tooltip
                             contentStyle={{
-                              backgroundColor: 'hsl(var(--card))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '8px'
+                              backgroundColor: 'white',
+                              border: '1px solid #e5e7eb',
+                              borderRadius: '8px',
+                              color: '#000'
                             }}
                           />
                         </RadarChart>
@@ -1023,8 +1199,16 @@ const Dashboard = () => {
                         handleRecommendationClick(rec);
                       }
                     }}
-                    className="group p-3 sm:p-5 rounded-lg sm:rounded-xl border-2 border-border bg-card hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                    className="group p-3 sm:p-5 rounded-lg sm:rounded-xl border-2 border-border bg-card hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 relative"
                   >
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => handleDismissRecommendation(rec._id || rec.id!, e)}
+                    >
+                      <span className="text-xs">✕</span>
+                    </Button>
                     <div className="flex items-start gap-3 sm:gap-4">
                       <div className="p-2 sm:p-3 bg-primary/10 rounded-lg group-hover:scale-110 transition-transform flex-shrink-0">
                         <span className="text-2xl sm:text-3xl">{getTypeIcon(rec.type)}</span>

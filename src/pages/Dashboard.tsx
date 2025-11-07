@@ -45,6 +45,19 @@ interface Recommendation {
   dismissed?: boolean;
   clicked?: boolean;
   aiGenerated?: boolean;
+  // Enhanced metadata
+  platform?: string;
+  provider?: string;
+  link?: string;
+  format?: string;
+  level?: string;
+  duration?: string;
+  price?: string;
+  outcomes?: string[];
+  bonuses?: string[];
+  focusAreas?: string[];
+  highlights?: string[];
+  audience?: string;
 }
 
 interface CertificationPath {
@@ -276,6 +289,8 @@ const Dashboard = () => {
   const [isCertificationDialogOpen, setIsCertificationDialogOpen] = useState(false);
   const [isCommunityDialogOpen, setIsCommunityDialogOpen] = useState(false);
   const [isCourseDialogOpen, setIsCourseDialogOpen] = useState(false);
+  const [selectedRecommendation, setSelectedRecommendation] = useState<Recommendation | null>(null);
+  const [isRecommendationDialogOpen, setIsRecommendationDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchTasks();
@@ -546,12 +561,22 @@ const Dashboard = () => {
       }
     }
 
-    if (rec.title === 'AWS Solutions Architect Certification') {
-      setIsCertificationDialogOpen(true);
-    } else if (rec.title === 'Join Tech Communities') {
-      setIsCommunityDialogOpen(true);
-    } else if (rec.title === 'Advanced System Design Course') {
-      setIsCourseDialogOpen(true);
+    // If the recommendation has a link and detailed metadata, show the dynamic modal
+    if (rec.link && rec.platform) {
+      setSelectedRecommendation(rec);
+      setIsRecommendationDialogOpen(true);
+    } else {
+      // Fallback to old hardcoded modals for legacy recommendations
+      if (rec.title === 'AWS Solutions Architect Certification') {
+        setIsCertificationDialogOpen(true);
+      } else if (rec.title === 'Join Tech Communities') {
+        setIsCommunityDialogOpen(true);
+      } else if (rec.title === 'Advanced System Design Course') {
+        setIsCourseDialogOpen(true);
+      } else if (rec.link) {
+        // If it has a link but no platform, just open it
+        window.open(rec.link, '_blank', 'noopener,noreferrer');
+      }
     }
   };
 
@@ -1217,12 +1242,35 @@ const Dashboard = () => {
                         <h4 className="font-semibold text-sm sm:text-lg text-foreground group-hover:text-primary transition-colors break-words">
                           {rec.title}
                         </h4>
-                        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed break-words">
+                        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed break-words line-clamp-2">
                           {rec.description}
                         </p>
-                        <Badge variant="outline" className="mt-2 capitalize text-xs">
-                          {rec.type}
-                        </Badge>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          <Badge variant="outline" className="capitalize text-xs">
+                            {rec.type}
+                          </Badge>
+                          {rec.platform && (
+                            <Badge variant="secondary" className="text-xs">
+                              {rec.platform}
+                            </Badge>
+                          )}
+                          {rec.price && (
+                            <Badge variant="outline" className="text-xs bg-green-500/10 border-green-500/30 text-green-700 dark:text-green-400">
+                              {rec.price}
+                            </Badge>
+                          )}
+                          {rec.level && (
+                            <Badge variant="outline" className="text-xs bg-primary/5 border-primary/30">
+                              {rec.level}
+                            </Badge>
+                          )}
+                        </div>
+                        {rec.link && (
+                          <p className="text-xs text-primary flex items-center gap-1 mt-1">
+                            <ExternalLink className="h-3 w-3" />
+                            Click to view details
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1610,6 +1658,202 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dynamic Recommendation Detail Dialog */}
+      <Dialog open={isRecommendationDialogOpen} onOpenChange={setIsRecommendationDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-2">
+          {selectedRecommendation && (
+            <>
+              <DialogHeader className="space-y-2">
+                <DialogTitle className="flex items-center gap-2 text-left text-xl sm:text-2xl">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <span className="text-2xl">{getTypeIcon(selectedRecommendation.type)}</span>
+                  </div>
+                  {selectedRecommendation.title}
+                </DialogTitle>
+                <DialogDescription className="text-sm sm:text-base">
+                  {selectedRecommendation.description}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 mt-4">
+                {/* Resource Details Card */}
+                <Card className="border-2 bg-card/95">
+                  <CardContent className="pt-6 space-y-4">
+                    {/* Metadata Badges */}
+                    <div className="flex flex-wrap gap-2">
+                      {selectedRecommendation.platform && (
+                        <Badge variant="secondary" className="text-xs">
+                          {selectedRecommendation.platform}
+                        </Badge>
+                      )}
+                      {selectedRecommendation.level && (
+                        <Badge variant="outline" className="text-xs bg-primary/5 border-primary/30">
+                          {selectedRecommendation.level}
+                        </Badge>
+                      )}
+                      {selectedRecommendation.duration && (
+                        <Badge variant="outline" className="text-xs">
+                          {selectedRecommendation.duration}
+                        </Badge>
+                      )}
+                      {selectedRecommendation.format && (
+                        <Badge variant="outline" className="text-xs bg-muted/60">
+                          {selectedRecommendation.format}
+                        </Badge>
+                      )}
+                      {selectedRecommendation.price && (
+                        <Badge variant="outline" className="text-xs bg-green-500/10 border-green-500/30 text-green-700 dark:text-green-400">
+                          {selectedRecommendation.price}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Provider */}
+                    {selectedRecommendation.provider && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Provider
+                        </p>
+                        <p className="text-sm text-foreground">{selectedRecommendation.provider}</p>
+                      </div>
+                    )}
+
+                    {/* Audience */}
+                    {selectedRecommendation.audience && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Best for
+                        </p>
+                        <p className="text-sm text-foreground">{selectedRecommendation.audience}</p>
+                      </div>
+                    )}
+
+                    {/* Relevance */}
+                    {selectedRecommendation.relevance && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Why this matches your goals
+                        </p>
+                        <p className="text-sm text-foreground leading-relaxed">{selectedRecommendation.relevance}</p>
+                      </div>
+                    )}
+
+                    {/* Outcomes */}
+                    {selectedRecommendation.outcomes && selectedRecommendation.outcomes.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          What you'll learn
+                        </p>
+                        <ul className="text-sm text-foreground/80 space-y-1 list-disc pl-4">
+                          {selectedRecommendation.outcomes.map((outcome, index) => (
+                            <li key={index}>{outcome}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Focus Areas */}
+                    {selectedRecommendation.focusAreas && selectedRecommendation.focusAreas.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Focus areas
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedRecommendation.focusAreas.map((area, index) => (
+                            <Badge
+                              key={index}
+                              variant="outline"
+                              className="text-xs bg-accent/10 border-accent/30"
+                            >
+                              {area}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Highlights */}
+                    {selectedRecommendation.highlights && selectedRecommendation.highlights.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Community highlights
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedRecommendation.highlights.map((highlight, index) => (
+                            <Badge
+                              key={index}
+                              variant="outline"
+                              className="text-xs bg-primary/5 border-primary/30"
+                            >
+                              {highlight}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Bonuses */}
+                    {selectedRecommendation.bonuses && selectedRecommendation.bonuses.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Bonus features
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedRecommendation.bonuses.map((bonus, index) => (
+                            <Badge
+                              key={index}
+                              variant="outline"
+                              className="text-xs bg-accent/10 border-accent/30"
+                            >
+                              {bonus}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Button */}
+                    {selectedRecommendation.link && (
+                      <Button asChild className="w-full gap-2 mt-4">
+                        <a
+                          href={selectedRecommendation.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-center"
+                        >
+                          {selectedRecommendation.type === 'course' && 'Enroll now'}
+                          {selectedRecommendation.type === 'certification' && 'View certification'}
+                          {selectedRecommendation.type === 'network' && 'Join community'}
+                          {selectedRecommendation.type === 'project' && 'Start building'}
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Tips Card */}
+                <Card className="border border-dashed border-primary/40 bg-primary/5">
+                  <CardContent className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center py-4">
+                    <div className="p-3 bg-background rounded-2xl">
+                      <Lightbulb className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm sm:text-base font-semibold text-foreground">
+                        Pro tip
+                      </p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
+                        Track your progress on this resource right in your GoalFlow dashboard by creating a task for it.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>

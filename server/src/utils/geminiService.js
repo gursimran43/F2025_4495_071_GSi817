@@ -95,46 +95,84 @@ Duration examples: "3 days", "1 week", "2 weeks", "1 month", "6 weeks"
   static async generateRecommendations(onboardingData, tasks) {
     try {
       console.log('🤖 Generating AI recommendations for:', onboardingData.name);
-      
+
       const taskTitles = tasks.map(t => t.title).join(', ');
-      
+
       const prompt = `
-Based on this user profile and their generated tasks, recommend exactly 6 specific resources to help them succeed in their career goals.
+You are a career development AI that generates SPECIFIC, REAL, and ACTIONABLE recommendations with REAL LINKS to actual resources.
 
 User Profile:
+- Name: ${onboardingData.name}
 - Profession: ${onboardingData.profession}
 - Experience: ${onboardingData.experience}
 - Industry: ${onboardingData.industry}
+- Current Skills: ${onboardingData.currentSkills}
 - Goals: ${onboardingData.goals}
 - Learning Style: ${onboardingData.learningStyle}
 - Timeline: ${onboardingData.timeline}
+- Weekly Hours: ${onboardingData.weeklyHours}
 
 Their Generated Tasks: ${taskTitles}
 
-Create exactly 6 recommendations including:
-- 2 online courses (specific course names or platforms if possible)
-- 2 practical projects they can build to demonstrate skills
-- 1 professional certification to pursue
-- 1 community/network to join for professional growth
+Generate exactly 6 SPECIFIC recommendations with REAL resources and REAL LINKS:
+- 2 REAL online courses from platforms like Coursera, Udemy, Udacity, LinkedIn Learning, Educative.io, Pluralsight, freeCodeCamp
+- 2 SPECIFIC project ideas they can build (with real GitHub repos or tutorial links if available)
+- 1 REAL professional certification program with actual certification link
+- 1 REAL community to join (Reddit, Discord, Slack, Dev.to, LinkedIn groups) with actual join link
 
-Return ONLY a valid JSON array (no other text, no markdown, no backticks) with this exact format:
+CRITICAL REQUIREMENTS:
+1. Use REAL course names from REAL platforms with REAL URLs
+2. Match courses to their profession (${onboardingData.profession}), industry (${onboardingData.industry}), and experience level (${onboardingData.experience})
+3. Include specific pricing, duration, and level information
+4. For communities, provide REAL Discord servers, Reddit subreddits, or Slack workspaces with actual join links
+5. For certifications, use industry-recognized programs (AWS, Google Cloud, Microsoft, CompTIA, etc.) based on their field
+
+Return ONLY valid JSON (no markdown, no backticks) in this EXACT format:
 [
   {
-    "title": "Specific recommendation title",
-    "description": "2-3 sentence description explaining what it is, where to find it, and why it's valuable for their goals",
+    "title": "Exact course/resource name",
+    "description": "Detailed 2-3 sentence description of what this resource offers and why it's perfect for their goals",
     "type": "course",
-    "relevance": "Brief explanation of why this specifically matches their profile and goals"
+    "relevance": "Why this specifically matches their ${onboardingData.profession} career path and ${onboardingData.goals}",
+    "platform": "Platform name (e.g., Coursera, Udemy)",
+    "provider": "Content creator (e.g., Google, IBM, University)",
+    "link": "REAL working URL to the resource",
+    "format": "Interactive lessons / Video course / Live cohort / Async forum",
+    "level": "Beginner / Intermediate / Advanced",
+    "duration": "X weeks / X months / Self-paced",
+    "price": "Free / $X / $X/mo",
+    "outcomes": ["Specific skill 1", "Specific skill 2", "Specific skill 3"],
+    "bonuses": ["Extra feature 1", "Extra feature 2"],
+    "focusAreas": ["Topic 1", "Topic 2"],
+    "highlights": ["Highlight 1", "Highlight 2"],
+    "audience": "Who this is for"
   }
 ]
 
-Types to use exactly: "course", "project", "certification", "network"
-Make recommendations specific to their industry and profession.
+For PROJECT type recommendations:
+- Provide specific project ideas relevant to ${onboardingData.profession}
+- Include GitHub repos, tutorial links, or documentation links as the "link"
+- Set price to "Free" and format to "Self-paced project"
+
+For CERTIFICATION type:
+- Use industry-standard certifications for ${onboardingData.industry}
+- Include actual certification body links (AWS, Google, Microsoft, etc.)
+- Provide real pricing and duration
+
+For NETWORK type:
+- Use REAL community links (https://reddit.com/r/..., https://discord.gg/..., https://slack.com/...)
+- Specify platform and format clearly
+- Include what makes this community valuable
+
+Make every recommendation hyper-personalized to ${onboardingData.profession} working in ${onboardingData.industry} with ${onboardingData.experience} experience level.
 `;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
+      console.log('🤖 Raw Recommendation Response (first 500 chars):', text.substring(0, 500));
+
       // Clean up the response and parse JSON
       const cleanText = text
         .trim()
@@ -143,25 +181,38 @@ Make recommendations specific to their industry and profession.
         .replace(/^[^[\{]*/, '')
         .replace(/[^}\]]*$/, '')
         .trim();
-      
+
       let recommendations;
       try {
         recommendations = JSON.parse(cleanText);
       } catch (parseError) {
         console.error('❌ Recommendations JSON Parse Error:', parseError.message);
+        console.log('📝 Cleaned Text:', cleanText.substring(0, 500));
         return this.getFallbackRecommendations(onboardingData);
       }
-      
+
       const validatedRecommendations = recommendations.map(rec => ({
         title: rec.title || 'Professional Recommendation',
         description: rec.description || 'This resource will help advance your career.',
         type: ['course', 'project', 'certification', 'network'].includes(rec.type) ? rec.type : 'course',
-        relevance: rec.relevance || 'Relevant to your career goals'
+        relevance: rec.relevance || 'Relevant to your career goals',
+        platform: rec.platform || '',
+        provider: rec.provider || '',
+        link: rec.link || '',
+        format: rec.format || '',
+        level: rec.level || '',
+        duration: rec.duration || '',
+        price: rec.price || '',
+        outcomes: Array.isArray(rec.outcomes) ? rec.outcomes : [],
+        bonuses: Array.isArray(rec.bonuses) ? rec.bonuses : [],
+        focusAreas: Array.isArray(rec.focusAreas) ? rec.focusAreas : [],
+        highlights: Array.isArray(rec.highlights) ? rec.highlights : [],
+        audience: rec.audience || ''
       }));
-      
+
       console.log(`✅ Generated ${validatedRecommendations.length} AI recommendations successfully`);
       return validatedRecommendations;
-      
+
     } catch (error) {
       console.error('❌ Gemini AI Recommendation Error:', error.message);
       return this.getFallbackRecommendations(onboardingData);
@@ -271,43 +322,118 @@ Return only the enhanced description (no other text, no quotes).
   // Fallback recommendations if AI fails
   static getFallbackRecommendations(onboardingData) {
     console.log('🔄 Generating fallback recommendations');
-    
+
+    const profession = (onboardingData.profession || 'Professional').toLowerCase();
+    const industry = (onboardingData.industry || 'Technology').toLowerCase();
+
     return [
       {
-        title: 'Coursera Professional Certificates',
+        title: 'Google Professional Certificate',
         description: 'Explore industry-recognized certificates from top companies like Google, IBM, and Meta. These certificates can be completed in 3-6 months and are highly valued by employers.',
         type: 'course',
-        relevance: 'Industry-recognized credentials that match current job market demands'
+        relevance: 'Industry-recognized credentials that match current job market demands',
+        platform: 'Coursera',
+        provider: 'Google',
+        link: 'https://www.coursera.org/google-certificates',
+        format: 'Video course + hands-on labs',
+        level: 'Beginner to Intermediate',
+        duration: '3-6 months',
+        price: '$49/month',
+        outcomes: ['Industry certification', 'Job-ready skills', 'Portfolio projects'],
+        bonuses: ['Career resources', 'Interview prep', 'Job board access'],
+        focusAreas: ['Professional skills', 'Industry tools', 'Best practices'],
+        highlights: [],
+        audience: 'Career switchers and professionals'
       },
       {
         title: 'Build a Portfolio Website',
         description: 'Create a professional website showcasing your work, projects, and achievements. Use platforms like GitHub Pages, Netlify, or WordPress to build an impressive online presence.',
         type: 'project',
-        relevance: 'Demonstrates your skills and makes you more visible to potential employers'
+        relevance: 'Demonstrates your skills and makes you more visible to potential employers',
+        platform: 'GitHub Pages',
+        provider: 'Self-guided',
+        link: 'https://pages.github.com/',
+        format: 'Self-paced project',
+        level: 'All levels',
+        duration: '1-2 weeks',
+        price: 'Free',
+        outcomes: ['Professional online presence', 'Portfolio showcase', 'Personal branding'],
+        bonuses: ['Free hosting', 'Custom domain support', 'Version control'],
+        focusAreas: ['Web development', 'Personal branding', 'Showcase'],
+        highlights: [],
+        audience: 'All professionals'
       },
       {
-        title: `${onboardingData.industry} Certification Program`,
-        description: `Pursue a relevant professional certification in ${onboardingData.industry}. Research the most recognized certifications in your field and create a study plan.`,
+        title: `${onboardingData.industry || 'Professional'} Certification`,
+        description: `Pursue a relevant professional certification in ${industry}. Research the most recognized certifications in your field and create a study plan.`,
         type: 'certification',
-        relevance: 'Validates your expertise and shows commitment to professional development'
+        relevance: 'Validates your expertise and shows commitment to professional development',
+        platform: 'Multiple providers',
+        provider: 'Industry leaders',
+        link: 'https://www.certmetrics.com/',
+        format: 'Self-study + exam',
+        level: 'Intermediate to Advanced',
+        duration: '2-4 months',
+        price: '$150-$300',
+        outcomes: ['Industry credential', 'Expert validation', 'Career advancement'],
+        bonuses: ['Digital badge', 'Resume boost', 'Salary increase potential'],
+        focusAreas: ['Industry expertise', 'Best practices', 'Standards'],
+        highlights: [],
+        audience: `${industry} professionals`
       },
       {
-        title: `Join ${onboardingData.profession} Community`,
-        description: `Connect with other professionals in ${onboardingData.profession} through LinkedIn groups, Discord servers, or local meetups. Share knowledge and learn from others' experiences.`,
+        title: `r/${profession.replace(/\s+/g, '')} Reddit Community`,
+        description: `Connect with other professionals in ${onboardingData.profession || 'your field'} through Reddit. Share knowledge, ask questions, and learn from others' experiences in this active community.`,
         type: 'network',
-        relevance: 'Building professional relationships accelerates career growth'
+        relevance: 'Building professional relationships accelerates career growth',
+        platform: 'Reddit',
+        provider: 'Community-driven',
+        link: `https://www.reddit.com/r/${profession.replace(/\s+/g, '')}/`,
+        format: 'Async forum',
+        level: 'All levels',
+        duration: 'Ongoing',
+        price: 'Free',
+        outcomes: [],
+        bonuses: [],
+        focusAreas: [],
+        highlights: ['Active community', 'Career advice', 'Industry news', 'Peer support'],
+        audience: `${onboardingData.profession || 'Professionals'} at all levels`
       },
       {
-        title: 'Complete Skill-Building Project',
-        description: 'Identify a gap in your skillset and create a project specifically to fill that gap. Document your learning process and share it with your network.',
+        title: 'Build a Real-World Project',
+        description: 'Identify a gap in your skillset and create a project specifically to fill that gap. Document your learning process, use version control, and share it with your network.',
         type: 'project',
-        relevance: 'Hands-on experience is the best way to solidify new skills'
+        relevance: 'Hands-on experience is the best way to solidify new skills',
+        platform: 'GitHub',
+        provider: 'Self-guided',
+        link: 'https://github.com/',
+        format: 'Self-paced project',
+        level: 'Intermediate',
+        duration: '2-4 weeks',
+        price: 'Free',
+        outcomes: ['Practical experience', 'Portfolio piece', 'GitHub showcase'],
+        bonuses: ['Version control practice', 'Documentation skills', 'Code review'],
+        focusAreas: ['Hands-on coding', 'Problem solving', 'Best practices'],
+        highlights: [],
+        audience: 'Developers and builders'
       },
       {
-        title: 'Industry-Specific Online Course',
-        description: `Find and complete a course specifically focused on ${onboardingData.industry} trends and best practices. Platforms like Udemy, LinkedIn Learning, or industry-specific sites offer great options.`,
+        title: `${industry} Masterclass`,
+        description: `Complete a course specifically focused on ${industry} trends and best practices. Platforms like Udemy, LinkedIn Learning offer comprehensive options taught by industry experts.`,
         type: 'course',
-        relevance: 'Keeps you updated with industry standards and emerging technologies'
+        relevance: 'Keeps you updated with industry standards and emerging technologies',
+        platform: 'Udemy',
+        provider: 'Industry experts',
+        link: 'https://www.udemy.com/',
+        format: 'Video course',
+        level: 'Intermediate',
+        duration: '4-8 weeks',
+        price: '$50-$100',
+        outcomes: ['Current industry knowledge', 'Practical skills', 'Certificate of completion'],
+        bonuses: ['Lifetime access', 'Mobile learning', 'Q&A support'],
+        focusAreas: [`${industry} trends`, 'Tools and technologies', 'Best practices'],
+        highlights: [],
+        audience: `${industry} professionals`
       }
     ];
   }

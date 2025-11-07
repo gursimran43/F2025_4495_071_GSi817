@@ -144,53 +144,63 @@ const ResumeBuilder = () => {
         }
     };
 
-    const handleGenerateWithAI = () => {
-        setIsGenerating(true);
+    const handleGenerateWithAI = async () => {
+        try {
+            setIsGenerating(true);
 
-        // Simulate AI generation
-        setTimeout(() => {
-            setPersonalInfo({
-                name: 'John Doe',
-                email: 'john.doe@example.com',
-                phone: '+1 (555) 123-4567',
-                location: 'San Francisco, CA',
-                summary: 'Results-driven professional with 5+ years of experience in software development. Passionate about creating innovative solutions and leading high-performing teams.'
-            });
+            // Call the AI resume generation API
+            const response = await api.generateResumeWithAI();
 
-            setExperiences([
-                {
-                    id: '1',
-                    company: 'Tech Corp',
-                    position: 'Senior Software Engineer',
-                    duration: '2021 - Present',
-                    description: 'Led development of scalable web applications, mentored junior developers, and improved system performance by 40%.'
-                },
-                {
-                    id: '2',
-                    company: 'StartupXYZ',
-                    position: 'Software Engineer',
-                    duration: '2019 - 2021',
-                    description: 'Developed full-stack applications using React and Node.js, collaborated with cross-functional teams.'
-                }
-            ]);
+            if (response.success && response.data) {
+                const { resumeContent } = response.data;
 
-            setEducation([
-                {
-                    id: '1',
-                    school: 'University of Technology',
-                    degree: 'Bachelor of Science in Computer Science',
-                    year: '2019'
-                }
-            ]);
+                // Populate form with AI-generated content
+                setPersonalInfo({
+                    name: resumeContent.personalInfo.name,
+                    email: resumeContent.personalInfo.email,
+                    phone: resumeContent.personalInfo.phone || '',
+                    location: resumeContent.personalInfo.location || '',
+                    summary: resumeContent.personalInfo.summary || ''
+                });
 
-            setSkills('JavaScript, TypeScript, React, Node.js, Python, AWS, Docker, Agile Methodologies');
+                setExperiences(
+                    resumeContent.experiences.map((exp, idx) => ({
+                        id: (idx + 1).toString(),
+                        company: exp.company,
+                        position: exp.position,
+                        duration: exp.duration,
+                        description: exp.description
+                    }))
+                );
 
-            setIsGenerating(false);
+                setEducation(
+                    resumeContent.education.map((edu, idx) => ({
+                        id: (idx + 1).toString(),
+                        school: edu.school,
+                        degree: edu.degree,
+                        year: edu.year
+                    }))
+                );
+
+                setSkills(resumeContent.skills);
+
+                toast({
+                    title: "Resume Generated!",
+                    description: "Your resume has been filled with personalized AI-generated content based on your profile.",
+                });
+            } else {
+                throw new Error(response.message || 'Failed to generate resume');
+            }
+        } catch (error) {
+            console.error('Error generating resume:', error);
             toast({
-                title: "Resume Generated!",
-                description: "Your resume has been filled with AI-generated content.",
+                title: "Generation Failed",
+                description: "Failed to generate resume content. Please try again or fill manually.",
+                variant: "destructive",
             });
-        }, 2500);
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     const addExperience = () => {

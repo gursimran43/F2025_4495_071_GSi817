@@ -437,6 +437,173 @@ Return only the enhanced description (no other text, no quotes).
       }
     ];
   }
+  // Generate personalized resume content based on user profile
+  static async generateResumeContent(userData, onboardingData) {
+    try {
+      console.log('🤖 Generating AI resume content for:', userData.name || userData.email);
+
+      const prompt = `
+You are a professional resume writer AI that creates personalized, ATS-friendly resume content.
+
+User Information:
+- Name: ${userData.name || 'Professional'}
+- Email: ${userData.email || ''}
+- Profession: ${onboardingData?.profession || 'Professional'}
+- Experience Level: ${onboardingData?.experience || 'Intermediate'}
+- Industry: ${onboardingData?.industry || 'Technology'}
+- Current Skills: ${onboardingData?.currentSkills || 'Various professional skills'}
+- Career Goals: ${onboardingData?.goals || 'Career advancement'}
+- Timeline: ${onboardingData?.timeline || '1-2 years'}
+
+Generate a complete, professional resume content that is:
+1. Personalized to their profession (${onboardingData?.profession || 'Professional'}) and industry (${onboardingData?.industry || 'Technology'})
+2. Appropriate for their experience level (${onboardingData?.experience || 'Intermediate'})
+3. ATS-friendly with strong action verbs and quantifiable achievements
+4. Includes realistic company names and dates
+5. Matches their career goals and current skill set
+
+Return ONLY valid JSON (no markdown, no backticks) with this EXACT structure:
+{
+  "personalInfo": {
+    "name": "${userData.name || 'Professional Name'}",
+    "email": "${userData.email || 'email@example.com'}",
+    "phone": "Generate realistic phone number",
+    "location": "Generate realistic location based on industry",
+    "summary": "Write 2-3 sentence professional summary highlighting experience in ${onboardingData?.profession || 'their field'}, key skills, and career focus"
+  },
+  "experiences": [
+    {
+      "company": "Realistic company name relevant to ${onboardingData?.industry || 'their industry'}",
+      "position": "Job title appropriate for ${onboardingData?.experience || 'their experience'} level",
+      "duration": "Realistic date range (e.g., 2022 - Present, 2020 - 2022)",
+      "description": "3-4 bullet points with strong action verbs, quantifiable achievements, and relevant technologies/skills from: ${onboardingData?.currentSkills || ''}"
+    }
+  ],
+  "education": [
+    {
+      "school": "Realistic university/institution name",
+      "degree": "Appropriate degree for ${onboardingData?.profession || 'their profession'} (e.g., Bachelor of Science in Computer Science)",
+      "year": "Realistic graduation year"
+    }
+  ],
+  "skills": "Comma-separated list of ${onboardingData?.currentSkills || 'relevant skills'} plus 3-5 additional skills that are valuable for ${onboardingData?.profession || 'their profession'} in ${onboardingData?.industry || 'their industry'}"
+}
+
+IMPORTANT REQUIREMENTS:
+- For experiences array, generate 2-3 realistic work experiences based on their ${onboardingData?.experience || 'experience'} level
+  - Entry level: 1-2 experiences, 0-2 years each
+  - Intermediate: 2-3 experiences, 2-3 years each
+  - Senior: 3-4 experiences, 3-5 years each
+- Use REALISTIC company names appropriate for ${onboardingData?.industry || 'their industry'} (can be real companies or realistic fictional ones)
+- Include QUANTIFIABLE achievements (percentages, numbers, metrics)
+- Use strong ACTION VERBS (Led, Developed, Implemented, Optimized, etc.)
+- Each experience description should be 3-4 bullet points showing impact
+- Skills should include technologies/tools actually used in ${onboardingData?.profession || 'their profession'}
+- Make dates realistic and chronologically correct
+- Professional summary should highlight ${onboardingData?.goals || 'their goals'}
+`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      console.log('🤖 Raw Resume Response (first 300 chars):', text.substring(0, 300));
+
+      // Clean up the response and parse JSON
+      const cleanText = text
+        .trim()
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .replace(/^[^{\[]*/, '')
+        .replace(/[^}\]]*$/, '')
+        .trim();
+
+      let resumeContent;
+      try {
+        resumeContent = JSON.parse(cleanText);
+      } catch (parseError) {
+        console.error('❌ Resume JSON Parse Error:', parseError.message);
+        console.log('📝 Cleaned Text:', cleanText.substring(0, 500));
+        return this.getFallbackResumeContent(userData, onboardingData);
+      }
+
+      // Validate and structure the response
+      const validatedResume = {
+        personalInfo: {
+          name: resumeContent.personalInfo?.name || userData.name || 'Professional',
+          email: resumeContent.personalInfo?.email || userData.email || '',
+          phone: resumeContent.personalInfo?.phone || '',
+          location: resumeContent.personalInfo?.location || '',
+          summary: resumeContent.personalInfo?.summary || ''
+        },
+        experiences: Array.isArray(resumeContent.experiences)
+          ? resumeContent.experiences.map(exp => ({
+              company: exp.company || 'Company Name',
+              position: exp.position || 'Position',
+              duration: exp.duration || '',
+              description: exp.description || ''
+            }))
+          : [],
+        education: Array.isArray(resumeContent.education)
+          ? resumeContent.education.map(edu => ({
+              school: edu.school || 'Institution',
+              degree: edu.degree || 'Degree',
+              year: edu.year || ''
+            }))
+          : [],
+        skills: resumeContent.skills || ''
+      };
+
+      console.log(`✅ Generated AI resume content with ${validatedResume.experiences.length} experiences`);
+      return validatedResume;
+
+    } catch (error) {
+      console.error('❌ Gemini AI Resume Generation Error:', error.message);
+      return this.getFallbackResumeContent(userData, onboardingData);
+    }
+  }
+
+  // Fallback resume content if AI fails
+  static getFallbackResumeContent(userData, onboardingData) {
+    console.log('🔄 Generating fallback resume content');
+
+    const profession = onboardingData?.profession || 'Professional';
+    const industry = onboardingData?.industry || 'Technology';
+    const experience = onboardingData?.experience || 'Intermediate';
+    const skills = onboardingData?.currentSkills || 'Communication, Problem Solving, Project Management';
+
+    return {
+      personalInfo: {
+        name: userData.name || 'Your Name',
+        email: userData.email || 'your.email@example.com',
+        phone: '+1 (555) 123-4567',
+        location: 'City, State',
+        summary: `Results-driven ${profession} with expertise in ${industry}. Proven track record of delivering high-quality results and collaborating effectively with cross-functional teams. Passionate about continuous learning and professional growth.`
+      },
+      experiences: [
+        {
+          company: `${industry} Solutions Inc.`,
+          position: experience === 'Entry level' ? `Junior ${profession}` : experience === 'Senior' ? `Senior ${profession}` : profession,
+          duration: experience === 'Senior' ? '2020 - Present' : experience === 'Intermediate' ? '2022 - Present' : '2023 - Present',
+          description: `• Led development and implementation of key projects in ${industry}\n• Collaborated with cross-functional teams to deliver solutions on time and within budget\n• Improved processes and efficiency by 30% through innovative approaches\n• Mentored team members and contributed to knowledge sharing initiatives`
+        },
+        {
+          company: `${industry} Innovations LLC`,
+          position: experience === 'Entry level' ? 'Intern' : `${profession}`,
+          duration: experience === 'Senior' ? '2017 - 2020' : experience === 'Intermediate' ? '2020 - 2022' : '2021 - 2023',
+          description: `• Contributed to multiple successful projects in ${industry} sector\n• Utilized ${skills.split(',')[0]} and modern best practices\n• Supported team objectives and exceeded performance targets\n• Gained valuable experience in professional environment`
+        }
+      ],
+      education: [
+        {
+          school: 'University of Technology',
+          degree: `Bachelor's Degree in ${industry} or related field`,
+          year: experience === 'Senior' ? '2017' : experience === 'Intermediate' ? '2020' : '2022'
+        }
+      ],
+      skills: skills
+    };
+  }
 }
 
 module.exports = GeminiService;

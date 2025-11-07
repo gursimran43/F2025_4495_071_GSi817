@@ -1,4 +1,7 @@
 const Resume = require('../models/Resume');
+const User = require('../models/User');
+const OnboardingData = require('../models/OnboardingData');
+const GeminiService = require('../utils/geminiService');
 
 // @desc    Get user's resumes
 // @route   GET /api/resumes
@@ -164,6 +167,52 @@ exports.toggleResumePublic = async (req, res, next) => {
       data: { resume },
     });
   } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Generate resume content with AI
+// @route   POST /api/resumes/generate-ai
+// @access  Private
+exports.generateResumeWithAI = async (req, res, next) => {
+  try {
+    console.log(`🤖 Starting AI resume generation for user: ${req.user._id}`);
+
+    // Get user data
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Get onboarding data for personalization
+    const onboardingData = await OnboardingData.findOne({ userId: req.user._id });
+
+    if (!onboardingData) {
+      console.log('⚠️ No onboarding data found, using basic user info');
+    }
+
+    // Generate resume content with AI
+    const resumeContent = await GeminiService.generateResumeContent(
+      {
+        name: user.name,
+        email: user.email
+      },
+      onboardingData
+    );
+
+    console.log('✅ AI resume content generated successfully');
+
+    res.status(200).json({
+      success: true,
+      message: 'Resume content generated successfully',
+      data: { resumeContent },
+    });
+
+  } catch (error) {
+    console.error('❌ Error generating AI resume:', error);
     next(error);
   }
 };

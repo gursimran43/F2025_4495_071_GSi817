@@ -406,6 +406,15 @@ class ApiService {
 
         return response.json();
     }
+
+    async generateResumeWithAI(): Promise<ApiResponse<{ resumeContent: Omit<Resume, '_id' | 'template'> }>> {
+        const response = await fetch(`${API_URL}/api/resumes/generate-ai`, {
+            method: 'POST',
+            headers: this.getHeaders(true),
+        });
+
+        return response.json();
+    }
 }
 
 export const api = new ApiService();

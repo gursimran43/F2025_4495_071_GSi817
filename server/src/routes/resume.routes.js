@@ -6,6 +6,7 @@ const {
   updateResume,
   deleteResume,
   toggleResumePublic,
+  generateResumeWithAI,
 } = require('../controllers/resume.controller');
 const { protect } = require('../middleware/auth.middleware');
 const { resumeValidation } = require('../utils/validators');
@@ -18,6 +19,7 @@ router.use(protect);
 router.get('/', getResumes);
 router.get('/:id', getResume);
 router.post('/', resumeValidation, createResume);
+router.post('/generate-ai', generateResumeWithAI);
 router.put('/:id', updateResume);
 router.patch('/:id/toggle-public', toggleResumePublic);
 router.delete('/:id', deleteResume);

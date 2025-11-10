@@ -135,20 +135,54 @@ User Profile:
 
 Their Generated Tasks: ${taskTitles}
 
-Generate exactly 6 SPECIFIC recommendations with REAL resources and REAL LINKS:
+Generate exactly 6 SPECIFIC recommendations with REAL resources and REAL, COMPLETE, CLICKABLE URLs:
 - 2 REAL online courses from platforms like Coursera, Udemy, Udacity, LinkedIn Learning, Educative.io, Pluralsight, freeCodeCamp
 - 2 SPECIFIC project ideas they can build (with real GitHub repos or tutorial links if available)
 - 1 REAL professional certification program with actual certification link
 - 1 REAL community to join (Reddit, Discord, Slack, Dev.to, LinkedIn groups) with actual join link
 
-CRITICAL REQUIREMENTS:
-1. Use REAL course names from REAL platforms with REAL URLs
-2. Match courses to their profession (${onboardingData.profession}), industry (${onboardingData.industry}), and experience level (${onboardingData.experience})
-3. Include specific pricing, duration, and level information
-4. For communities, provide REAL Discord servers, Reddit subreddits, or Slack workspaces with actual join links
-5. For certifications, use industry-recognized programs (AWS, Google Cloud, Microsoft, CompTIA, etc.) based on their field
+CRITICAL REQUIREMENTS FOR URLS:
+1. Use COMPLETE, SPECIFIC URLS that link directly to the course/resource, NOT generic platform homepages
+   - GOOD: "https://www.udemy.com/course/aws-certified-solutions-architect-associate-saa-c03/"
+   - BAD: "https://www.udemy.com/"
+   - GOOD: "https://www.coursera.org/specializations/machine-learning-introduction"
+   - BAD: "https://www.coursera.org/"
+2. For Udemy courses: Include the full course URL like "https://www.udemy.com/course/[course-slug]/"
+3. For Coursera: Use "https://www.coursera.org/learn/[course-name]" or "https://www.coursera.org/specializations/[specialization-name]"
+4. For certifications: Use the exact certification page URL (e.g., "https://aws.amazon.com/certification/certified-solutions-architect-associate/")
+5. For Reddit: Use "https://www.reddit.com/r/[subreddit-name]/" (e.g., "https://www.reddit.com/r/cloudarchitecture/")
+6. For Discord: Use actual Discord invite links like "https://discord.gg/[invite-code]"
+7. For GitHub projects: Use specific topic URLs like "https://github.com/topics/[topic-name]"
 
-Return ONLY valid JSON (no markdown, no backticks) in this EXACT format:
+ADDITIONAL REQUIREMENTS:
+1. Match courses to their profession (${onboardingData.profession}), industry (${onboardingData.industry}), and experience level (${onboardingData.experience})
+2. Include specific pricing, duration, and level information
+3. For communities, provide REAL Discord servers, Reddit subreddits, or Slack workspaces with actual join links
+4. For certifications, use industry-recognized programs (AWS, Google Cloud, Microsoft, CompTIA, etc.) based on their field
+
+EXAMPLE OF GOOD RECOMMENDATIONS (use this format and specificity level):
+[
+  {
+    "title": "AWS Certified Solutions Architect - Associate 2024",
+    "description": "Complete certification training course covering EC2, S3, VPC, IAM, Lambda, and architectural best practices. Includes hands-on labs, practice exams, and real-world scenarios.",
+    "type": "course",
+    "relevance": "Essential for cloud architects working with AWS, this course directly prepares you for the industry's most sought-after cloud certification",
+    "platform": "Udemy",
+    "provider": "Stephane Maarek",
+    "link": "https://www.udemy.com/course/aws-certified-solutions-architect-associate-saa-c03/",
+    "format": "Video course + hands-on labs",
+    "level": "Intermediate",
+    "duration": "27 hours on-demand video",
+    "price": "$84.99 (often on sale for $12.99)",
+    "outcomes": ["AWS certification preparation", "Hands-on cloud architecture", "Real-world scenarios"],
+    "bonuses": ["Lifetime access", "Certificate of completion", "Q&A support"],
+    "focusAreas": ["AWS services", "Cloud architecture", "Best practices"],
+    "highlights": [],
+    "audience": "Cloud architects and AWS engineers"
+  }
+]
+
+Now generate your recommendations in this EXACT format with REAL, COMPLETE URLs:
 [
   {
     "title": "Exact course/resource name",
@@ -157,7 +191,7 @@ Return ONLY valid JSON (no markdown, no backticks) in this EXACT format:
     "relevance": "Why this specifically matches their ${onboardingData.profession} career path and ${onboardingData.goals}",
     "platform": "Platform name (e.g., Coursera, Udemy)",
     "provider": "Content creator (e.g., Google, IBM, University)",
-    "link": "REAL working URL to the resource",
+    "link": "COMPLETE, SPECIFIC URL directly to the course/resource (NOT a homepage)",
     "format": "Interactive lessons / Video course / Live cohort / Async forum",
     "level": "Beginner / Intermediate / Advanced",
     "duration": "X weeks / X months / Self-paced",
@@ -394,116 +428,296 @@ Return only the enhanced description (no other text, no quotes).
     const profession = (onboardingData.profession || 'Professional').toLowerCase();
     const industry = (onboardingData.industry || 'Technology').toLowerCase();
 
-    return [
-      {
-        title: 'Google Professional Certificate',
-        description: 'Explore industry-recognized certificates from top companies like Google, IBM, and Meta. These certificates can be completed in 3-6 months and are highly valued by employers.',
+    // Determine industry-specific recommendations
+    const isCloudArchitect = profession.includes('architect') || profession.includes('cloud') || profession.includes('aws') || profession.includes('devops');
+    const isDeveloper = profession.includes('developer') || profession.includes('engineer') || profession.includes('programmer');
+    const isProductManager = profession.includes('product') && profession.includes('manager');
+    const isDataScience = profession.includes('data') || profession.includes('analytics') || profession.includes('machine learning');
+
+    // Build recommendations based on profession
+    const recommendations = [];
+
+    // Course 1
+    if (isCloudArchitect) {
+      recommendations.push({
+        title: 'AWS Certified Solutions Architect - Associate 2024',
+        description: 'Complete certification training course covering EC2, S3, VPC, IAM, Lambda, and architectural best practices. Includes hands-on labs, practice exams, and real-world scenarios to prepare for the AWS certification exam.',
         type: 'course',
-        relevance: 'Industry-recognized credentials that match current job market demands',
+        relevance: 'Essential certification for cloud architects working with AWS infrastructure',
+        platform: 'Udemy',
+        provider: 'Stephane Maarek',
+        link: 'https://www.udemy.com/course/aws-certified-solutions-architect-associate-saa-c03/',
+        format: 'Video course + hands-on labs',
+        level: 'Intermediate',
+        duration: '27 hours on-demand video',
+        price: '$84.99 (often on sale for $12.99)',
+        outcomes: ['AWS certification preparation', 'Hands-on cloud architecture', 'Real-world scenarios', 'Practice exams'],
+        bonuses: ['Lifetime access', 'Mobile learning', 'Certificate of completion', 'Q&A support'],
+        focusAreas: ['AWS services', 'Cloud architecture', 'Best practices', 'Security'],
+        highlights: [],
+        audience: 'Cloud architects and AWS engineers'
+      });
+    } else if (isDeveloper) {
+      recommendations.push({
+        title: 'The Complete Web Developer in 2024: Zero to Mastery',
+        description: 'Master modern web development with React, Node.js, Express, MongoDB, and more. Build 15+ real-world projects including full-stack applications with authentication, payments, and deployment.',
+        type: 'course',
+        relevance: 'Comprehensive full-stack development skills highly valued in the current job market',
+        platform: 'Udemy',
+        provider: 'Andrei Neagoie',
+        link: 'https://www.udemy.com/course/the-complete-web-developer-zero-to-mastery/',
+        format: 'Video course + coding exercises',
+        level: 'Beginner to Advanced',
+        duration: '41 hours on-demand video',
+        price: '$84.99 (often on sale)',
+        outcomes: ['Full-stack development', '15+ portfolio projects', 'Modern JavaScript', 'React & Node.js'],
+        bonuses: ['Lifetime access', 'Discord community', 'Career guidance', 'Interview prep'],
+        focusAreas: ['Frontend development', 'Backend development', 'Databases', 'Deployment'],
+        highlights: [],
+        audience: 'Web developers and software engineers'
+      });
+    } else if (isProductManager) {
+      recommendations.push({
+        title: 'Become a Product Manager | Learn the Skills & Get the Job',
+        description: 'Learn product management from former Google and Facebook PMs. Master user research, roadmapping, prioritization, metrics, and stakeholder management with real product case studies.',
+        type: 'course',
+        relevance: 'Industry-standard PM skills from tech leaders',
+        platform: 'Udemy',
+        provider: 'Cole Mercer & Evan Kimbrell',
+        link: 'https://www.udemy.com/course/become-a-product-manager-learn-the-skills-get-a-job/',
+        format: 'Video course + templates',
+        level: 'Intermediate',
+        duration: '10 hours on-demand video',
+        price: '$84.99',
+        outcomes: ['Product strategy', 'User research', 'Roadmap planning', 'Stakeholder management'],
+        bonuses: ['PM templates', 'Interview prep', 'Resume review', 'Certificate'],
+        focusAreas: ['Product strategy', 'Agile methods', 'Metrics & KPIs', 'Communication'],
+        highlights: [],
+        audience: 'Aspiring and current product managers'
+      });
+    } else {
+      recommendations.push({
+        title: 'Google Professional Certificate Programs',
+        description: 'Industry-recognized certificates from Google covering Data Analytics, Project Management, UX Design, IT Support, and more. Gain job-ready skills in 3-6 months with hands-on projects.',
+        type: 'course',
+        relevance: 'Recognized credentials that open doors across multiple industries',
         platform: 'Coursera',
         provider: 'Google',
-        link: 'https://www.coursera.org/google-certificates',
-        format: 'Video course + hands-on labs',
+        link: 'https://www.coursera.org/google-career-certificates',
+        format: 'Video course + hands-on projects',
         level: 'Beginner to Intermediate',
         duration: '3-6 months',
         price: '$49/month',
-        outcomes: ['Industry certification', 'Job-ready skills', 'Portfolio projects'],
-        bonuses: ['Career resources', 'Interview prep', 'Job board access'],
-        focusAreas: ['Professional skills', 'Industry tools', 'Best practices'],
+        outcomes: ['Industry certification', 'Job-ready skills', 'Portfolio projects', 'Career resources'],
+        bonuses: ['Career resources', 'Interview prep', 'Job board access', 'Resume builder'],
+        focusAreas: ['Professional skills', 'Industry tools', 'Best practices', 'Hands-on experience'],
         highlights: [],
         audience: 'Career switchers and professionals'
-      },
-      {
-        title: 'Build a Portfolio Website',
-        description: 'Create a professional website showcasing your work, projects, and achievements. Use platforms like GitHub Pages, Netlify, or WordPress to build an impressive online presence.',
-        type: 'project',
-        relevance: 'Demonstrates your skills and makes you more visible to potential employers',
-        platform: 'GitHub Pages',
-        provider: 'Self-guided',
-        link: 'https://pages.github.com/',
-        format: 'Self-paced project',
-        level: 'All levels',
-        duration: '1-2 weeks',
-        price: 'Free',
-        outcomes: ['Professional online presence', 'Portfolio showcase', 'Personal branding'],
-        bonuses: ['Free hosting', 'Custom domain support', 'Version control'],
-        focusAreas: ['Web development', 'Personal branding', 'Showcase'],
+      });
+    }
+
+    // Course 2
+    if (isDataScience) {
+      recommendations.push({
+        title: 'Machine Learning Specialization',
+        description: 'Learn machine learning fundamentals from Andrew Ng, Stanford professor and founder of DeepLearning.AI. Master supervised learning, neural networks, and best practices with Python and TensorFlow.',
+        type: 'course',
+        relevance: 'Industry-standard ML education from a pioneer in the field',
+        platform: 'Coursera',
+        provider: 'Andrew Ng, Stanford & DeepLearning.AI',
+        link: 'https://www.coursera.org/specializations/machine-learning-introduction',
+        format: 'Video lectures + programming assignments',
+        level: 'Intermediate',
+        duration: '3 months (10 hours/week)',
+        price: '$49/month',
+        outcomes: ['ML fundamentals', 'Python & TensorFlow', 'Neural networks', 'Best practices'],
+        bonuses: ['Shareable certificate', 'Flexible schedule', 'Career resources'],
+        focusAreas: ['Supervised learning', 'Neural networks', 'ML algorithms', 'Python'],
         highlights: [],
-        audience: 'All professionals'
-      },
-      {
-        title: `${onboardingData.industry || 'Professional'} Certification`,
-        description: `Pursue a relevant professional certification in ${industry}. Research the most recognized certifications in your field and create a study plan.`,
+        audience: 'Data scientists and ML engineers'
+      });
+    } else {
+      recommendations.push({
+        title: 'CS50\'s Introduction to Computer Science',
+        description: 'Harvard University\'s legendary introduction to computer science and programming. Learn problem-solving, algorithms, data structures, and build real projects. Completely free and self-paced.',
+        type: 'course',
+        relevance: 'World-class CS fundamentals strengthen any technical career',
+        platform: 'edX / Harvard',
+        provider: 'Harvard University',
+        link: 'https://www.edx.org/learn/computer-science/harvard-university-cs50-s-introduction-to-computer-science',
+        format: 'Video lectures + problem sets + projects',
+        level: 'Beginner',
+        duration: '10-20 hours/week for 12 weeks',
+        price: 'Free (certificate $199)',
+        outcomes: ['CS fundamentals', 'Problem solving', 'Multiple languages', 'Final project'],
+        bonuses: ['Free access', 'Harvard certificate option', 'Supportive community', 'Lifetime access'],
+        focusAreas: ['Algorithms', 'Data structures', 'Programming', 'Problem solving'],
+        highlights: [],
+        audience: 'Anyone wanting strong CS fundamentals'
+      });
+    }
+
+    // Certification
+    if (isCloudArchitect) {
+      recommendations.push({
+        title: 'AWS Certified Solutions Architect - Associate',
+        description: 'Validate your ability to design and deploy scalable systems on AWS. Covers architectural best practices, security, cost optimization, and operational excellence across AWS services.',
         type: 'certification',
-        relevance: 'Validates your expertise and shows commitment to professional development',
-        platform: 'Multiple providers',
-        provider: 'Industry leaders',
-        link: 'https://www.certmetrics.com/',
-        format: 'Self-study + exam',
-        level: 'Intermediate to Advanced',
-        duration: '2-4 months',
-        price: '$150-$300',
-        outcomes: ['Industry credential', 'Expert validation', 'Career advancement'],
-        bonuses: ['Digital badge', 'Resume boost', 'Salary increase potential'],
-        focusAreas: ['Industry expertise', 'Best practices', 'Standards'],
+        relevance: 'Industry-standard credential for cloud architects, opens high-paying job opportunities',
+        platform: 'AWS Certification',
+        provider: 'Amazon Web Services',
+        link: 'https://aws.amazon.com/certification/certified-solutions-architect-associate/',
+        format: 'Self-study + 130-minute exam',
+        level: 'Associate',
+        duration: '2-4 months study',
+        price: '$150 USD exam fee',
+        outcomes: ['AWS credential', 'Architectural expertise', 'Cloud best practices', 'Career advancement'],
+        bonuses: ['Digital badge', 'AWS certified community', 'Salary increase potential', 'Recertification every 3 years'],
+        focusAreas: ['Cloud architecture', 'AWS services', 'Security', 'Cost optimization'],
         highlights: [],
-        audience: `${industry} professionals`
-      },
-      {
-        title: `r/${profession.replace(/\s+/g, '')} Reddit Community`,
-        description: `Connect with other professionals in ${onboardingData.profession || 'your field'} through Reddit. Share knowledge, ask questions, and learn from others' experiences in this active community.`,
+        audience: 'Cloud architects and AWS engineers'
+      });
+    } else if (isDeveloper) {
+      recommendations.push({
+        title: 'Microsoft Certified: Azure Developer Associate',
+        description: 'Demonstrate your expertise in developing cloud applications and services on Microsoft Azure. Covers Azure compute, storage, security, and monitoring.',
+        type: 'certification',
+        relevance: 'Highly valued credential for developers working with cloud platforms',
+        platform: 'Microsoft Learn',
+        provider: 'Microsoft',
+        link: 'https://learn.microsoft.com/en-us/certifications/azure-developer/',
+        format: 'Self-paced learning + exam',
+        level: 'Associate',
+        duration: '2-3 months',
+        price: '$165 USD exam fee',
+        outcomes: ['Azure expertise', 'Cloud development', 'Microsoft credential', 'Career growth'],
+        bonuses: ['Digital badge', 'Microsoft community', 'Free learning paths', 'Valid for 1 year'],
+        focusAreas: ['Azure services', 'Cloud development', 'Security', 'Monitoring'],
+        highlights: [],
+        audience: 'Cloud developers and Azure engineers'
+      });
+    } else {
+      recommendations.push({
+        title: 'Google Cloud Professional Cloud Architect',
+        description: 'Demonstrate your ability to design, develop, and manage robust, secure, scalable, and dynamic solutions on Google Cloud Platform.',
+        type: 'certification',
+        relevance: 'Premier certification for cloud professionals, validates enterprise architecture skills',
+        platform: 'Google Cloud',
+        provider: 'Google',
+        link: 'https://cloud.google.com/certification/cloud-architect',
+        format: 'Study + 2-hour exam',
+        level: 'Professional',
+        duration: '3-6 months preparation',
+        price: '$200 USD exam fee',
+        outcomes: ['GCP expertise', 'Architecture credential', 'Industry recognition', 'Career advancement'],
+        bonuses: ['Digital badge', 'Google Cloud community', 'Recertification every 2 years'],
+        focusAreas: ['Cloud architecture', 'GCP services', 'Design patterns', 'Best practices'],
+        highlights: [],
+        audience: 'Cloud architects and GCP professionals'
+      });
+    }
+
+    // Project 1
+    recommendations.push({
+      title: 'Build a Full-Stack Application with Modern Technologies',
+      description: 'Create a complete CRUD application using React, Node.js, Express, and MongoDB/PostgreSQL. Include authentication, API design, database modeling, and deployment to Vercel/Heroku.',
+      type: 'project',
+      relevance: 'Demonstrates end-to-end development skills that employers actively seek',
+      platform: 'GitHub',
+      provider: 'Self-guided',
+      link: 'https://github.com/topics/fullstack-project',
+      format: 'Self-paced hands-on project',
+      level: 'Intermediate',
+      duration: '3-4 weeks',
+      price: 'Free',
+      outcomes: ['Full-stack portfolio piece', 'GitHub project', 'Deployed application', 'Real-world experience'],
+      bonuses: ['Version control', 'Documentation practice', 'Deploy experience', 'Resume showcase'],
+      focusAreas: ['Frontend', 'Backend', 'Database', 'Deployment'],
+      highlights: [],
+      audience: 'Developers building their portfolio'
+    });
+
+    // Project 2
+    recommendations.push({
+      title: 'Contribute to Open Source Projects',
+      description: 'Find beginner-friendly open source projects on GitHub and make meaningful contributions. Start with documentation, bug fixes, then progress to features. Build reputation and real-world experience.',
+      type: 'project',
+      relevance: 'Open source contributions demonstrate collaboration skills and code quality',
+      platform: 'GitHub',
+      provider: 'Open Source Community',
+      link: 'https://github.com/topics/good-first-issue',
+      format: 'Collaborative development',
+      level: 'Beginner to Intermediate',
+      duration: 'Ongoing',
+      price: 'Free',
+      outcomes: ['Open source experience', 'Code review skills', 'Community involvement', 'Portfolio building'],
+      bonuses: ['Mentorship opportunities', 'Networking', 'Real codebase experience', 'GitHub profile'],
+      focusAreas: ['Collaboration', 'Code quality', 'Best practices', 'Git workflow'],
+      highlights: [],
+      audience: 'Developers at all levels'
+    });
+
+    // Community/Network
+    if (isCloudArchitect) {
+      recommendations.push({
+        title: 'AWS Developers Slack Community',
+        description: 'Join the largest AWS developer community on Slack with 20,000+ members. Get real-time help, share knowledge, participate in discussions about AWS services, architecture patterns, and best practices.',
         type: 'network',
-        relevance: 'Building professional relationships accelerates career growth',
-        platform: 'Reddit',
+        relevance: 'Connect with AWS experts, get answers fast, and stay updated on cloud trends',
+        platform: 'Slack',
         provider: 'Community-driven',
-        link: `https://www.reddit.com/r/${profession.replace(/\s+/g, '')}/`,
-        format: 'Async forum',
+        link: 'https://awsdevelopers.slack.com/',
+        format: 'Real-time chat + channels',
         level: 'All levels',
         duration: 'Ongoing',
         price: 'Free',
-        outcomes: [],
-        bonuses: [],
-        focusAreas: [],
-        highlights: ['Active community', 'Career advice', 'Industry news', 'Peer support'],
-        audience: `${onboardingData.profession || 'Professionals'} at all levels`
-      },
-      {
-        title: 'Build a Real-World Project',
-        description: 'Identify a gap in your skillset and create a project specifically to fill that gap. Document your learning process, use version control, and share it with your network.',
-        type: 'project',
-        relevance: 'Hands-on experience is the best way to solidify new skills',
-        platform: 'GitHub',
-        provider: 'Self-guided',
-        link: 'https://github.com/',
-        format: 'Self-paced project',
-        level: 'Intermediate',
-        duration: '2-4 weeks',
+        outcomes: ['Expert connections', 'Problem solving', 'Career opportunities', 'Learning resources'],
+        bonuses: ['Job board', 'Events calendar', 'Resource sharing'],
+        focusAreas: ['AWS services', 'Architecture', 'Best practices', 'Troubleshooting'],
+        highlights: ['20K+ members', 'Active discussions', 'Expert advice', 'Job opportunities'],
+        audience: 'AWS developers and architects'
+      });
+    } else if (isDeveloper) {
+      recommendations.push({
+        title: 'freeCodeCamp Developer Community',
+        description: 'Join the massive freeCodeCamp community on Discord with study groups, code reviews, project feedback, and career advice. Connect with developers worldwide who are learning and growing together.',
+        type: 'network',
+        relevance: 'Supportive community perfect for learning, networking, and career growth',
+        platform: 'Discord',
+        provider: 'freeCodeCamp',
+        link: 'https://discord.gg/freecodecamp',
+        format: 'Discord server + study groups',
+        level: 'All levels',
+        duration: 'Ongoing',
         price: 'Free',
-        outcomes: ['Practical experience', 'Portfolio piece', 'GitHub showcase'],
-        bonuses: ['Version control practice', 'Documentation skills', 'Code review'],
-        focusAreas: ['Hands-on coding', 'Problem solving', 'Best practices'],
-        highlights: [],
-        audience: 'Developers and builders'
-      },
-      {
-        title: `${industry} Masterclass`,
-        description: `Complete a course specifically focused on ${industry} trends and best practices. Platforms like Udemy, LinkedIn Learning offer comprehensive options taught by industry experts.`,
-        type: 'course',
-        relevance: 'Keeps you updated with industry standards and emerging technologies',
-        platform: 'Udemy',
-        provider: 'Industry experts',
-        link: 'https://www.udemy.com/',
-        format: 'Video course',
-        level: 'Intermediate',
-        duration: '4-8 weeks',
-        price: '$50-$100',
-        outcomes: ['Current industry knowledge', 'Practical skills', 'Certificate of completion'],
-        bonuses: ['Lifetime access', 'Mobile learning', 'Q&A support'],
-        focusAreas: [`${industry} trends`, 'Tools and technologies', 'Best practices'],
-        highlights: [],
+        outcomes: ['Study partners', 'Code reviews', 'Mentorship', 'Job opportunities'],
+        bonuses: ['Study rooms', 'Project feedback', 'Interview prep', 'Accountability'],
+        focusAreas: ['Web development', 'Problem solving', 'Career guidance', 'Networking'],
+        highlights: ['Active community', 'Study groups', 'Peer support', 'Free resources'],
+        audience: 'Web developers and software engineers'
+      });
+    } else {
+      recommendations.push({
+        title: 'Professional Network on LinkedIn Groups',
+        description: `Join active LinkedIn groups in ${industry} to connect with industry professionals, share insights, discover job opportunities, and stay updated on industry trends.`,
+        type: 'network',
+        relevance: 'Professional networking essential for career advancement and opportunities',
+        platform: 'LinkedIn',
+        provider: 'Professional network',
+        link: 'https://www.linkedin.com/groups/',
+        format: 'Professional networking',
+        level: 'All levels',
+        duration: 'Ongoing',
+        price: 'Free',
+        outcomes: ['Professional connections', 'Industry insights', 'Job opportunities', 'Thought leadership'],
+        bonuses: ['Job postings', 'Events', 'Discussions', 'Direct messaging'],
+        focusAreas: [`${industry} trends`, 'Career growth', 'Networking', 'Knowledge sharing'],
+        highlights: ['Industry experts', 'Job opportunities', 'Events', 'Latest trends'],
         audience: `${industry} professionals`
-      }
-    ];
+      });
+    }
+
+    return recommendations.slice(0, 6); // Return exactly 6 recommendations
   }
   // Generate personalized resume content based on user profile
   static async generateResumeContent(userData, onboardingData) {
@@ -671,6 +885,176 @@ IMPORTANT REQUIREMENTS:
       ],
       skills: skills
     };
+  }
+
+  // Enhance resume for specific job description
+  static async enhanceResumeForJob(currentResume, jobDescription, onboardingData) {
+    try {
+      console.log('🤖 Enhancing resume with AI for target job');
+
+      const prompt = `
+You are an expert resume writer and ATS (Applicant Tracking System) optimization specialist. Your task is to enhance an existing resume to match a specific job description while maintaining authenticity.
+
+CURRENT RESUME:
+Name: ${currentResume.personalInfo?.name || 'Candidate'}
+Email: ${currentResume.personalInfo?.email || ''}
+Phone: ${currentResume.personalInfo?.phone || ''}
+Location: ${currentResume.personalInfo?.location || ''}
+Professional Summary: ${currentResume.personalInfo?.summary || ''}
+
+Work Experience:
+${currentResume.experiences?.map((exp, i) => `
+${i + 1}. ${exp.position} at ${exp.company} (${exp.duration})
+   ${exp.description}
+`).join('\n')}
+
+Education:
+${currentResume.education?.map((edu, i) => `
+${i + 1}. ${edu.degree} - ${edu.school} (${edu.year})
+`).join('\n')}
+
+Skills: ${currentResume.skills || ''}
+
+TARGET JOB DESCRIPTION:
+${jobDescription}
+
+USER CONTEXT (if available):
+${onboardingData ? `
+- Profession: ${onboardingData.profession || ''}
+- Experience Level: ${onboardingData.experience || ''}
+- Industry: ${onboardingData.industry || ''}
+- Goals: ${onboardingData.goals || ''}
+- Current Skills: ${onboardingData.currentSkills || ''}
+` : 'No additional context'}
+
+ENHANCEMENT REQUIREMENTS:
+1. **Professional Summary**: Rewrite to align with the job's key requirements. Include 2-3 most relevant skills/experiences from the job description. Keep it 2-3 sentences.
+
+2. **Work Experience**: For EACH experience entry:
+   - Keep the company name, position, and duration EXACTLY as provided
+   - ENHANCE the description to highlight achievements relevant to the target job
+   - Use strong action verbs (Led, Developed, Implemented, Optimized, Achieved)
+   - Add quantifiable metrics where possible (percentages, numbers, scale)
+   - Incorporate keywords from the job description naturally
+   - Format as bullet points (use bullet point character •)
+   - Make 4-6 bullet points per experience
+
+3. **Education**: Keep education EXACTLY as provided. Do not modify.
+
+4. **Skills**:
+   - Reorganize skills to prioritize those mentioned in the job description
+   - Add relevant skills from job description that match the candidate's background
+   - Remove less relevant skills if needed to stay focused
+   - Keep it as a comma-separated list
+
+5. **ATS Optimization**:
+   - Use exact keywords and phrases from the job description
+   - Avoid overly creative language that might confuse ATS
+   - Use standard section headers
+   - Maintain professional terminology
+
+6. **Authenticity**:
+   - DO NOT fabricate experiences or skills
+   - Only emphasize and reframe existing experiences
+   - Keep all facts (companies, dates, degrees) unchanged
+   - Enhance descriptions to show relevance, not invent new achievements
+
+Return ONLY valid JSON (no markdown, no backticks) in this EXACT structure:
+{
+  "personalInfo": {
+    "name": "${currentResume.personalInfo?.name || 'Name'}",
+    "email": "${currentResume.personalInfo?.email || 'email@example.com'}",
+    "phone": "${currentResume.personalInfo?.phone || ''}",
+    "location": "${currentResume.personalInfo?.location || ''}",
+    "summary": "Enhanced 2-3 sentence professional summary aligned with job requirements"
+  },
+  "experiences": [
+    {
+      "company": "EXACT company name from original",
+      "position": "EXACT position from original",
+      "duration": "EXACT duration from original",
+      "description": "• Enhanced bullet point 1 with metrics and keywords\\n• Enhanced bullet point 2 with action verbs\\n• Enhanced bullet point 3 showing relevant achievements\\n• Enhanced bullet point 4 with quantifiable results"
+    }
+  ],
+  "education": [
+    {
+      "school": "EXACT school name from original",
+      "degree": "EXACT degree from original",
+      "year": "EXACT year from original"
+    }
+  ],
+  "skills": "Prioritized, comma-separated skills list optimized for the job"
+}
+
+IMPORTANT:
+- Each experience description should be a single string with bullet points separated by \\n
+- Use • character for bullet points
+- Include 4-6 bullet points per experience
+- Match ${currentResume.experiences?.length || 0} experience entries
+- Match ${currentResume.education?.length || 0} education entries
+- Keep company names, positions, durations, schools, degrees, and years IDENTICAL to original
+`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      console.log('🤖 Raw Enhancement Response (first 500 chars):', text.substring(0, 500));
+
+      // Clean up the response and parse JSON
+      const cleanText = text
+        .trim()
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .replace(/^[^{\[]*/, '')
+        .replace(/[^}\]]*$/, '')
+        .trim();
+
+      let enhancedResume;
+      try {
+        enhancedResume = JSON.parse(cleanText);
+      } catch (parseError) {
+        console.error('❌ Enhancement JSON Parse Error:', parseError.message);
+        console.log('📝 Cleaned Text:', cleanText.substring(0, 500));
+        // If parsing fails, return the original resume
+        return currentResume;
+      }
+
+      // Validate and ensure proper structure
+      const validatedResume = {
+        personalInfo: {
+          name: enhancedResume.personalInfo?.name || currentResume.personalInfo?.name || '',
+          email: enhancedResume.personalInfo?.email || currentResume.personalInfo?.email || '',
+          phone: enhancedResume.personalInfo?.phone || currentResume.personalInfo?.phone || '',
+          location: enhancedResume.personalInfo?.location || currentResume.personalInfo?.location || '',
+          summary: enhancedResume.personalInfo?.summary || currentResume.personalInfo?.summary || ''
+        },
+        experiences: Array.isArray(enhancedResume.experiences)
+          ? enhancedResume.experiences.map((exp, idx) => ({
+              company: exp.company || currentResume.experiences?.[idx]?.company || '',
+              position: exp.position || currentResume.experiences?.[idx]?.position || '',
+              duration: exp.duration || currentResume.experiences?.[idx]?.duration || '',
+              description: exp.description || currentResume.experiences?.[idx]?.description || ''
+            }))
+          : currentResume.experiences || [],
+        education: Array.isArray(enhancedResume.education)
+          ? enhancedResume.education.map((edu, idx) => ({
+              school: edu.school || currentResume.education?.[idx]?.school || '',
+              degree: edu.degree || currentResume.education?.[idx]?.degree || '',
+              year: edu.year || currentResume.education?.[idx]?.year || ''
+            }))
+          : currentResume.education || [],
+        skills: enhancedResume.skills || currentResume.skills || ''
+      };
+
+      console.log(`✅ Resume enhanced successfully with ${validatedResume.experiences.length} experiences`);
+      return validatedResume;
+
+    } catch (error) {
+      console.error('❌ Gemini AI Resume Enhancement Error:', error.message);
+      // On error, return the original resume
+      return currentResume;
+    }
   }
 }
 

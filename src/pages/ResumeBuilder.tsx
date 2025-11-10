@@ -55,6 +55,8 @@ const ResumeBuilder = () => {
     ]);
 
     const [skills, setSkills] = useState('');
+    const [jobDescription, setJobDescription] = useState('');
+    const [isEnhancing, setIsEnhancing] = useState(false);
 
     useEffect(() => {
         loadExistingResume();
@@ -216,6 +218,84 @@ const ResumeBuilder = () => {
         }
     };
 
+    const handleEnhanceResume = async () => {
+        try {
+            setIsEnhancing(true);
+
+            // Prepare current resume data
+            const currentResumeData = {
+                personalInfo,
+                experiences: experiences.map(({ id, ...exp }) => exp),
+                education: education.map(({ id, ...edu }) => edu),
+                skills,
+                jobDescription
+            };
+
+            // Call the AI enhance resume API
+            const response = await api.enhanceResumeWithAI(currentResumeData);
+
+            if (response.success && response.data) {
+                const { enhancedResume } = response.data;
+
+                console.log('AI Enhanced Resume Content:', enhancedResume);
+
+                // Update form with enhanced content
+                if (enhancedResume.personalInfo) {
+                    setPersonalInfo({
+                        name: enhancedResume.personalInfo.name || personalInfo.name,
+                        email: enhancedResume.personalInfo.email || personalInfo.email,
+                        phone: enhancedResume.personalInfo.phone || personalInfo.phone,
+                        location: enhancedResume.personalInfo.location || personalInfo.location,
+                        summary: enhancedResume.personalInfo.summary || personalInfo.summary
+                    });
+                }
+
+                if (Array.isArray(enhancedResume.experiences) && enhancedResume.experiences.length > 0) {
+                    setExperiences(
+                        enhancedResume.experiences.map((exp, idx) => ({
+                            id: experiences[idx]?.id || (idx + 1).toString(),
+                            company: exp.company || '',
+                            position: exp.position || '',
+                            duration: exp.duration || '',
+                            description: exp.description || ''
+                        }))
+                    );
+                }
+
+                if (Array.isArray(enhancedResume.education) && enhancedResume.education.length > 0) {
+                    setEducation(
+                        enhancedResume.education.map((edu, idx) => ({
+                            id: education[idx]?.id || (idx + 1).toString(),
+                            school: edu.school || '',
+                            degree: edu.degree || '',
+                            year: edu.year || ''
+                        }))
+                    );
+                }
+
+                if (enhancedResume.skills) {
+                    setSkills(enhancedResume.skills);
+                }
+
+                toast({
+                    title: "Resume Enhanced!",
+                    description: "Your resume has been optimized for the job description using AI.",
+                });
+            } else {
+                throw new Error(response.message || 'Failed to enhance resume');
+            }
+        } catch (error) {
+            console.error('Error enhancing resume:', error);
+            toast({
+                title: "Enhancement Failed",
+                description: "Failed to enhance resume. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsEnhancing(false);
+        }
+    };
+
     const addExperience = () => {
         setExperiences([...experiences, { id: Date.now().toString(), company: '', position: '', duration: '', description: '' }]);
     };
@@ -370,32 +450,45 @@ const ResumeBuilder = () => {
                                     <div className="space-y-1">
                                         <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                                             <Sparkles className="h-5 w-5 text-primary" />
-                                            Generate Resume with AI
+                                            AI Resume Tools
                                         </h3>
                                         <p className="text-sm text-muted-foreground">
-                                            Let AI create a professional resume based on your profile
+                                            Generate a new resume or enhance your current one with AI
                                         </p>
                                     </div>
-                                    <Button
-                                        onClick={handleGenerateWithAI}
-                                        disabled={isGenerating}
-                                        size="lg"
-                                        className="gap-2"
-                                    >
-                                        <Sparkles className="h-4 w-4" />
-                                        {isGenerating ? 'Generating...' : 'Generate with AI'}
-                                    </Button>
+                                    <div className="flex gap-3">
+                                        <Button
+                                            onClick={handleGenerateWithAI}
+                                            disabled={isGenerating || isEnhancing}
+                                            size="lg"
+                                            variant="outline"
+                                            className="gap-2"
+                                        >
+                                            <Sparkles className="h-4 w-4" />
+                                            {isGenerating ? 'Generating...' : 'Generate'}
+                                        </Button>
+                                        <Button
+                                            onClick={handleEnhanceResume}
+                                            disabled={isEnhancing || isGenerating || !jobDescription.trim()}
+                                            size="lg"
+                                            className="gap-2"
+                                        >
+                                            <Sparkles className="h-4 w-4" />
+                                            {isEnhancing ? 'Enhancing...' : 'Enhance for Job'}
+                                        </Button>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
 
                         {/* Main Content */}
                         <Tabs defaultValue="personal" className="space-y-6">
-                            <TabsList className="grid w-full grid-cols-4">
+                            <TabsList className="grid w-full grid-cols-5">
                                 <TabsTrigger value="personal">Personal Info</TabsTrigger>
                                 <TabsTrigger value="experience">Experience</TabsTrigger>
                                 <TabsTrigger value="education">Education</TabsTrigger>
                                 <TabsTrigger value="skills">Skills</TabsTrigger>
+                                <TabsTrigger value="job">Job Description</TabsTrigger>
                             </TabsList>
 
                             {/* Personal Info Tab */}
@@ -623,6 +716,49 @@ const ResumeBuilder = () => {
                                                 Separate skills with commas
                                             </p>
                                         </div>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+
+                            {/* Job Description Tab */}
+                            <TabsContent value="job">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <Sparkles className="h-5 w-5 text-primary" />
+                                            Target Job Description
+                                        </CardTitle>
+                                        <CardDescription>
+                                            Paste the job description you're applying for. AI will tailor your resume to match it.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="jobDescription">Job Description</Label>
+                                            <Textarea
+                                                id="jobDescription"
+                                                placeholder="Paste the full job description here including required skills, qualifications, and responsibilities..."
+                                                rows={15}
+                                                value={jobDescription}
+                                                onChange={(e) => setJobDescription(e.target.value)}
+                                                className="resize-none"
+                                            />
+                                            <p className="text-xs text-muted-foreground">
+                                                Include job title, requirements, responsibilities, and any specific keywords from the posting
+                                            </p>
+                                        </div>
+                                        {jobDescription.trim() && (
+                                            <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
+                                                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                                    <Sparkles className="h-4 w-4 text-primary" />
+                                                    AI Enhancement Ready
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Click "Enhance for Job" button above to optimize your resume for this position.
+                                                    AI will tailor your experience descriptions, skills, and summary to match the job requirements.
+                                                </p>
+                                            </div>
+                                        )}
                                     </CardContent>
                                 </Card>
                             </TabsContent>

@@ -216,3 +216,57 @@ exports.generateResumeWithAI = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Enhance resume with AI for specific job
+// @route   POST /api/resumes/enhance-ai
+// @access  Private
+exports.enhanceResumeWithAI = async (req, res, next) => {
+  try {
+    console.log(`🤖 Starting AI resume enhancement for user: ${req.user._id}`);
+
+    const { personalInfo, experiences, education, skills, jobDescription } = req.body;
+
+    if (!jobDescription || !jobDescription.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Job description is required for AI enhancement',
+      });
+    }
+
+    // Get user data
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Get onboarding data for context
+    const onboardingData = await OnboardingData.findOne({ userId: req.user._id });
+
+    // Enhance resume content with AI
+    const enhancedResume = await GeminiService.enhanceResumeForJob(
+      {
+        personalInfo,
+        experiences,
+        education,
+        skills,
+      },
+      jobDescription,
+      onboardingData
+    );
+
+    console.log('✅ AI resume enhancement completed successfully');
+
+    res.status(200).json({
+      success: true,
+      message: 'Resume enhanced successfully for the target job',
+      data: { enhancedResume },
+    });
+
+  } catch (error) {
+    console.error('❌ Error enhancing resume with AI:', error);
+    next(error);
+  }
+};

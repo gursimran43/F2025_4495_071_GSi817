@@ -425,6 +425,22 @@ class ApiService {
         return response.json();
     }
 
+    async enhanceResumeWithAI(resumeData: {
+        personalInfo: Resume['personalInfo'];
+        experiences: Experience[];
+        education: Education[];
+        skills: string;
+        jobDescription: string;
+    }): Promise<ApiResponse<{ enhancedResume: Omit<Resume, '_id' | 'template'> }>> {
+        const response = await fetch(`${API_URL}/api/resumes/enhance-ai`, {
+            method: 'POST',
+            headers: this.getHeaders(true),
+            body: JSON.stringify(resumeData),
+        });
+
+        return response.json();
+    }
+
     // Analytics
     async getAnalytics(): Promise<ApiResponse<{
         overview: {

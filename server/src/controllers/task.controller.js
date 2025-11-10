@@ -193,6 +193,52 @@ exports.updateTaskProgress = async (req, res, next) => {
   }
 };
 
+// @desc    Toggle subtask completion
+// @route   PATCH /api/tasks/:id/subtasks/:subtaskIndex/toggle
+// @access  Private
+exports.toggleSubtaskCompletion = async (req, res, next) => {
+  try {
+    const { id, subtaskIndex } = req.params;
+    const index = parseInt(subtaskIndex);
+
+    const task = await Task.findOne({
+      _id: id,
+      userId: req.user._id
+    });
+
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: 'Task not found',
+      });
+    }
+
+    if (!task.subtasks || index < 0 || index >= task.subtasks.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid subtask index',
+      });
+    }
+
+    // Toggle subtask completion
+    task.subtasks[index].completed = !task.subtasks[index].completed;
+
+    // Save will trigger pre-save hook that auto-calculates percentage
+    await task.save();
+
+    const status = task.subtasks[index].completed ? 'completed' : 'uncompleted';
+    console.log(`✅ Subtask ${status}: ${task.subtasks[index].title} (Task: ${task.title})`);
+
+    res.status(200).json({
+      success: true,
+      message: `Subtask marked as ${status}`,
+      data: { task },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Toggle task completion
 // @route   PATCH /api/tasks/:id/toggle
 // @access  Private

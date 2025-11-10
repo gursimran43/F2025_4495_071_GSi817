@@ -19,7 +19,7 @@ interface Experience {
     company: string;
     position: string;
     duration: string;
-    description: string;
+    description: string | string[];
 }
 
 interface Education {
@@ -154,35 +154,48 @@ const ResumeBuilder = () => {
             if (response.success && response.data) {
                 const { resumeContent } = response.data;
 
+                console.log('AI Generated Resume Content:', resumeContent);
+
                 // Populate form with AI-generated content
                 setPersonalInfo({
-                    name: resumeContent.personalInfo.name,
-                    email: resumeContent.personalInfo.email,
-                    phone: resumeContent.personalInfo.phone || '',
-                    location: resumeContent.personalInfo.location || '',
-                    summary: resumeContent.personalInfo.summary || ''
+                    name: resumeContent.personalInfo?.name || '',
+                    email: resumeContent.personalInfo?.email || '',
+                    phone: resumeContent.personalInfo?.phone || '',
+                    location: resumeContent.personalInfo?.location || '',
+                    summary: resumeContent.personalInfo?.summary || ''
                 });
 
                 setExperiences(
-                    resumeContent.experiences.map((exp, idx) => ({
-                        id: (idx + 1).toString(),
-                        company: exp.company,
-                        position: exp.position,
-                        duration: exp.duration,
-                        description: exp.description
-                    }))
+                    Array.isArray(resumeContent.experiences) && resumeContent.experiences.length > 0
+                        ? resumeContent.experiences.map((exp, idx) => ({
+                            id: (idx + 1).toString(),
+                            company: exp.company || '',
+                            position: exp.position || '',
+                            duration: exp.duration || '',
+                            description: exp.description || ''
+                        }))
+                        : [{ id: '1', company: '', position: '', duration: '', description: '' }]
                 );
 
                 setEducation(
-                    resumeContent.education.map((edu, idx) => ({
-                        id: (idx + 1).toString(),
-                        school: edu.school,
-                        degree: edu.degree,
-                        year: edu.year
-                    }))
+                    Array.isArray(resumeContent.education) && resumeContent.education.length > 0
+                        ? resumeContent.education.map((edu, idx) => ({
+                            id: (idx + 1).toString(),
+                            school: edu.school || '',
+                            degree: edu.degree || '',
+                            year: edu.year || ''
+                        }))
+                        : [{ id: '1', school: '', degree: '', year: '' }]
                 );
 
-                setSkills(resumeContent.skills);
+                setSkills(resumeContent.skills || '');
+
+                console.log('State updated with:', {
+                    personalInfo,
+                    experiencesCount: resumeContent.experiences?.length,
+                    educationCount: resumeContent.education?.length,
+                    skillsLength: resumeContent.skills?.length
+                });
 
                 toast({
                     title: "Resume Generated!",
@@ -225,6 +238,12 @@ const ResumeBuilder = () => {
 
     const handleDownload = async () => {
         try {
+            // First, open the preview dialog to ensure the resume content is rendered
+            setShowPreview(true);
+
+            // Wait a bit for the dialog to render
+            await new Promise(resolve => setTimeout(resolve, 300));
+
             const element = document.getElementById('resume-content');
             if (!element) {
                 toast({
@@ -235,6 +254,11 @@ const ResumeBuilder = () => {
                 return;
             }
 
+            toast({
+                title: "Generating PDF...",
+                description: "Please wait while we create your PDF.",
+            });
+
             // Import html2canvas and jsPDF dynamically
             const html2canvas = (await import('html2canvas')).default;
             const { jsPDF } = await import('jspdf');
@@ -243,6 +267,8 @@ const ResumeBuilder = () => {
                 scale: 2,
                 backgroundColor: '#ffffff',
                 logging: false,
+                useCORS: true,
+                allowTaint: true,
             });
 
             const imgData = canvas.toDataURL('image/png');
@@ -257,18 +283,23 @@ const ResumeBuilder = () => {
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
             pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-            pdf.save(`${personalInfo.name || 'resume'}.pdf`);
+            pdf.save(`${personalInfo.name.replace(/\s+/g, '_') || 'resume'}.pdf`);
 
             toast({
-                title: "Download Started",
-                description: "Your resume is being downloaded as PDF.",
+                title: "Download Complete",
+                description: "Your resume has been downloaded as PDF.",
             });
+
+            // Close the preview after a short delay
+            setTimeout(() => setShowPreview(false), 500);
         } catch (error) {
+            console.error('PDF generation error:', error);
             toast({
                 variant: 'destructive',
                 title: "Download Failed",
                 description: "Could not generate PDF. Please try again.",
             });
+            setShowPreview(false);
         }
     };
 
@@ -490,7 +521,7 @@ const ResumeBuilder = () => {
                                                 <Textarea
                                                     placeholder="Describe your responsibilities and achievements..."
                                                     rows={3}
-                                                    value={exp.description}
+                                                    value={Array.isArray(exp.description) ? exp.description.join('\n') : exp.description}
                                                     onChange={(e) => {
                                                         const updated = [...experiences];
                                                         updated[index].description = e.target.value;
@@ -604,16 +635,18 @@ const ResumeBuilder = () => {
 
             {/* Preview Dialog */}
             <Dialog open={showPreview} onOpenChange={setShowPreview}>
-                <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-6">
                     <DialogHeader>
                         <DialogTitle>Resume Preview</DialogTitle>
                     </DialogHeader>
-                    <ResumePreview
-                        personalInfo={personalInfo}
-                        experiences={experiences}
-                        education={education}
-                        skills={skills}
-                    />
+                    <div className="mt-4">
+                        <ResumePreview
+                            personalInfo={personalInfo}
+                            experiences={experiences}
+                            education={education}
+                            skills={skills}
+                        />
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>

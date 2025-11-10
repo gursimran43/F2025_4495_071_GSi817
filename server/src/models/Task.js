@@ -44,6 +44,16 @@ const taskSchema = new mongoose.Schema(
       type: String,
       default: '1 week',
     },
+    subtasks: [{
+      title: {
+        type: String,
+        required: true,
+      },
+      completed: {
+        type: Boolean,
+        default: false,
+      },
+    }],
     resources: [{
       type: String,
     }],
@@ -63,23 +73,39 @@ const taskSchema = new mongoose.Schema(
 taskSchema.index({ userId: 1, completed: 1 });
 taskSchema.index({ userId: 1, priority: 1 });
 
-// Update completedAt when task is completed
+// Auto-calculate percentage based on subtasks
 taskSchema.pre('save', function(next) {
-  if (this.isModified('completed')) {
-    if (this.completed) {
+  // Calculate percentage based on completed subtasks
+  if (this.subtasks && this.subtasks.length > 0) {
+    const completedCount = this.subtasks.filter(st => st.completed).length;
+    this.percentage = Math.round((completedCount / this.subtasks.length) * 100);
+
+    // Auto-complete task when all subtasks are done
+    if (this.percentage === 100) {
+      this.completed = true;
       this.completedAt = new Date();
-      this.percentage = 100;
-    } else {
+    } else if (this.percentage < 100) {
+      this.completed = false;
       this.completedAt = null;
     }
+  } else {
+    // Legacy behavior for tasks without subtasks
+    if (this.isModified('completed')) {
+      if (this.completed) {
+        this.completedAt = new Date();
+        this.percentage = 100;
+      } else {
+        this.completedAt = null;
+      }
+    }
+
+    // Auto-complete when percentage reaches 100
+    if (this.isModified('percentage') && this.percentage >= 100) {
+      this.completed = true;
+      this.completedAt = new Date();
+    }
   }
-  
-  // Auto-complete when percentage reaches 100
-  if (this.isModified('percentage') && this.percentage >= 100) {
-    this.completed = true;
-    this.completedAt = new Date();
-  }
-  
+
   next();
 });
 

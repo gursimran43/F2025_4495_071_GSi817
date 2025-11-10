@@ -251,6 +251,15 @@ class ApiService {
         return response.json();
     }
 
+    async toggleSubtaskCompletion(taskId: string, subtaskIndex: number): Promise<ApiResponse<{ task: Task }>> {
+        const response = await fetch(`${API_URL}/api/tasks/${taskId}/subtasks/${subtaskIndex}/toggle`, {
+            method: 'PATCH',
+            headers: this.getHeaders(true),
+        });
+
+        return response.json();
+    }
+
     async deleteTask(id: string): Promise<ApiResponse<void>> {
         const response = await fetch(`${API_URL}/api/tasks/${id}`, {
             method: 'DELETE',
@@ -410,6 +419,44 @@ class ApiService {
     async generateResumeWithAI(): Promise<ApiResponse<{ resumeContent: Omit<Resume, '_id' | 'template'> }>> {
         const response = await fetch(`${API_URL}/api/resumes/generate-ai`, {
             method: 'POST',
+            headers: this.getHeaders(true),
+        });
+
+        return response.json();
+    }
+
+    // Analytics
+    async getAnalytics(): Promise<ApiResponse<{
+        overview: {
+            totalTasks: number;
+            completedTasks: number;
+            pendingTasks: number;
+            completionRate: number;
+            currentStreak: number;
+        };
+        progressData: Array<{
+            month: string;
+            progress: number;
+            tasksCompleted: number;
+            hoursSpent: number;
+        }>;
+        weeklyActivity: Array<{
+            day: string;
+            hours: number;
+            tasks: number;
+        }>;
+        categoryData: Array<{
+            name: string;
+            value: number;
+        }>;
+        skillsData: Array<{
+            skill: string;
+            current: number;
+            target: number;
+        }>;
+    }>> {
+        const response = await fetch(`${API_URL}/api/analytics`, {
+            method: 'GET',
             headers: this.getHeaders(true),
         });
 

@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Target, LogOut, TrendingUp, CheckCircle2, Award, Zap, BookOpen, Rocket,
@@ -23,6 +22,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { api } from '@/services/api';
 import { toast } from '@/hooks/use-toast';
 
+interface Subtask {
+  title: string;
+  completed: boolean;
+}
+
 interface Task {
   _id?: string;
   id?: string;
@@ -32,6 +36,7 @@ interface Task {
   percentage: number;
   priority: 'high' | 'medium' | 'low';
   category: string;
+  subtasks?: Subtask[];
   aiGenerated?: boolean;
 }
 
@@ -71,47 +76,7 @@ interface CertificationPath {
   focusAreas: string[];
 }
 
-// Mock data for analytics
-const generateProgressData = () => {
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-  return months.map((month, index) => ({
-    month,
-    progress: Math.min((index + 1) * 15 + Math.random() * 10, 100),
-    tasksCompleted: Math.floor((index + 1) * 2 + Math.random() * 3),
-    hoursSpent: Math.floor(15 + index * 5 + Math.random() * 10),
-  }));
-};
-
-const generateWeeklyActivity = () => {
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  return days.map(day => ({
-    day,
-    hours: Math.floor(Math.random() * 5) + 1,
-    tasks: Math.floor(Math.random() * 4) + 1,
-  }));
-};
-
-const generateSkillsData = () => {
-  return [
-    { skill: 'Leadership', current: 75, target: 90 },
-    { skill: 'Technical', current: 65, target: 85 },
-    { skill: 'Communication', current: 80, target: 95 },
-    { skill: 'Strategy', current: 70, target: 90 },
-    { skill: 'Analytics', current: 60, target: 80 },
-  ];
-};
-
-const generateCategoryData = () => {
-  return [
-    { name: 'Technical', value: 35 },
-    { name: 'Soft Skills', value: 25 },
-    { name: 'Leadership', value: 20 },
-    { name: 'Analytics', value: 15 },
-    { name: 'Other', value: 5 },
-  ];
-};
-
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
 const certificationPaths: CertificationPath[] = [
   {
@@ -282,10 +247,11 @@ const Dashboard = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [progressData] = useState(generateProgressData());
-  const [weeklyData] = useState(generateWeeklyActivity());
-  const [skillsData] = useState(generateSkillsData());
-  const [categoryData] = useState(generateCategoryData());
+  const [progressData, setProgressData] = useState<Array<{ month: string; progress: number; tasksCompleted: number; hoursSpent: number }>>([]);
+  const [weeklyData, setWeeklyData] = useState<Array<{ day: string; hours: number; tasks: number }>>([]);
+  const [skillsData, setSkillsData] = useState<Array<{ skill: string; current: number; target: number }>>([]);
+  const [categoryData, setCategoryData] = useState<Array<{ name: string; value: number }>>([]);
+  const [currentStreak, setCurrentStreak] = useState(0);
   const [isCertificationDialogOpen, setIsCertificationDialogOpen] = useState(false);
   const [isCommunityDialogOpen, setIsCommunityDialogOpen] = useState(false);
   const [isCourseDialogOpen, setIsCourseDialogOpen] = useState(false);
@@ -295,6 +261,7 @@ const Dashboard = () => {
   useEffect(() => {
     fetchTasks();
     loadRecommendations();
+    fetchAnalytics();
   }, []);
 
   const fetchTasks = async () => {
@@ -361,6 +328,22 @@ const Dashboard = () => {
       if (storedRecs) {
         setRecommendations(JSON.parse(storedRecs));
       }
+    }
+  };
+
+  const fetchAnalytics = async () => {
+    try {
+      const response = await api.getAnalytics();
+      if (response.success && response.data) {
+        setProgressData(response.data.progressData);
+        setWeeklyData(response.data.weeklyActivity);
+        setSkillsData(response.data.skillsData);
+        setCategoryData(response.data.categoryData);
+        setCurrentStreak(response.data.overview.currentStreak);
+      }
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      // Silently fail - analytics not critical for app functionality
     }
   };
 
@@ -514,6 +497,40 @@ const Dashboard = () => {
       toast({
         title: "Error",
         description: "Failed to update task progress",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleSubtask = async (taskId: string, subtaskIndex: number) => {
+    try {
+      const response = await api.toggleSubtaskCompletion(taskId, subtaskIndex);
+      if (response.success && response.data) {
+        const updatedTask = {
+          ...response.data.task,
+          id: response.data.task._id || taskId,
+          completed: response.data.task.completed ?? false,
+          percentage: response.data.task.percentage ?? 0,
+          subtasks: response.data.task.subtasks || [],
+        };
+        setTasks(tasks.map(task => task.id === taskId ? updatedTask : task));
+
+        // Refresh analytics to show updated progress
+        fetchAnalytics();
+
+        // Show toast only when all subtasks are completed
+        if (updatedTask.completed && updatedTask.percentage === 100) {
+          toast({
+            title: "Task Completed!",
+            description: `All subtasks for "${updatedTask.title}" are done!`,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling subtask:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update subtask",
         variant: "destructive",
       });
     }
@@ -1166,24 +1183,40 @@ const Dashboard = () => {
                           </div>
                         </div>
 
-                        {/* Percentage Slider */}
+                        {/* Progress Bar and Subtasks */}
                         <div className="space-y-2 pt-2">
                           <div className="flex items-center justify-between text-xs sm:text-sm gap-2">
                             <span className="text-muted-foreground font-medium truncate">Progress</span>
                             <span className="font-bold text-foreground flex-shrink-0">{task.percentage}%</span>
                           </div>
-                          <div className="flex items-center gap-2 sm:gap-3">
-                            <Slider
-                              value={[task.percentage]}
-                              onValueChange={(value) => updateTaskPercentage(task.id, value[0])}
-                              max={100}
-                              step={5}
-                              className="flex-1"
-                            />
-                            {task.completed && (
-                              <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400 flex-shrink-0" />
-                            )}
-                          </div>
+                          <Progress value={task.percentage} className="h-2" />
+
+                          {/* Subtasks */}
+                          {task.subtasks && task.subtasks.length > 0 && (
+                            <div className="mt-3 space-y-2 pl-2 border-l-2 border-primary/20">
+                              {task.subtasks.map((subtask, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex items-start gap-2 group hover:bg-muted/30 p-1.5 rounded transition-colors"
+                                >
+                                  <Checkbox
+                                    checked={subtask.completed}
+                                    onCheckedChange={() => toggleSubtask(task.id, idx)}
+                                    className="mt-0.5 h-4 w-4 flex-shrink-0"
+                                  />
+                                  <span
+                                    className={`text-xs sm:text-sm flex-1 ${
+                                      subtask.completed
+                                        ? 'text-muted-foreground line-through'
+                                        : 'text-foreground'
+                                    }`}
+                                  >
+                                    {subtask.title}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -48,6 +48,7 @@ app.use('/api/onboarding', require('./routes/onboarding.routes'));
 app.use('/api/tasks', require('./routes/task.routes'));
 app.use('/api/recommendations', require('./routes/recommendation.routes'));
 app.use('/api/resumes', require('./routes/resume.routes'));
+app.use('/api/analytics', require('./routes/analytics.routes'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -73,6 +74,7 @@ app.get('/', (req, res) => {
       tasks: '/api/tasks',
       recommendations: '/api/recommendations',
       resumes: '/api/resumes',
+      analytics: '/api/analytics',
     }
   });
 });

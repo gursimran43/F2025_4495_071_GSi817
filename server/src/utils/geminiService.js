@@ -36,9 +36,24 @@ Return ONLY a valid JSON array (no other text, no markdown, no backticks) with t
     "description": "Detailed 2-3 sentence description explaining what to do, how to do it, and why it matters for their goals",
     "priority": "high",
     "category": "Foundation",
-    "estimatedDuration": "2 weeks"
+    "estimatedDuration": "2 weeks",
+    "subtasks": [
+      "Specific actionable subtask 1",
+      "Specific actionable subtask 2",
+      "Specific actionable subtask 3",
+      "Specific actionable subtask 4",
+      "Specific actionable subtask 5"
+    ]
   }
 ]
+
+IMPORTANT REQUIREMENTS FOR SUBTASKS:
+- Generate 5-10 specific, actionable subtasks for EACH task
+- Subtasks should be small, concrete steps that break down the main task
+- Each subtask should be completable in 1-2 hours or less
+- Subtasks should be ordered logically (start to finish)
+- Make subtasks clear enough that checking them off provides a sense of progress
+- Example subtask format: "Research and bookmark 3 online courses", "Complete module 1 of the course", "Build the header component"
 
 Categories to use: Foundation, Learning, Projects, Networking, Certification, Portfolio, Research, Practice, Skills
 Priorities: high (critical for goals), medium (important), low (beneficial but not essential)
@@ -76,6 +91,12 @@ Duration examples: "3 days", "1 week", "2 weeks", "1 month", "6 weeks"
         priority: ['high', 'medium', 'low'].includes(task.priority) ? task.priority : 'medium',
         category: task.category || 'General',
         estimatedDuration: task.estimatedDuration || '1 week',
+        subtasks: Array.isArray(task.subtasks) && task.subtasks.length > 0
+          ? task.subtasks.map(st => ({
+              title: typeof st === 'string' ? st : st.title || 'Subtask',
+              completed: false
+            }))
+          : [],
         aiGenerated: true,
         percentage: 0,
         completed: false
@@ -260,6 +281,14 @@ Return only the enhanced description (no other text, no quotes).
         priority: 'high',
         category: 'Foundation',
         estimatedDuration: '1 week',
+        subtasks: [
+          { title: 'Research industry-specific keywords and requirements', completed: false },
+          { title: 'Gather all past work experience and achievements', completed: false },
+          { title: 'Choose a modern, ATS-friendly template', completed: false },
+          { title: 'Write professional summary highlighting key skills', completed: false },
+          { title: 'Add quantified achievements for each role', completed: false },
+          { title: 'Proofread and optimize for ATS scanning', completed: false },
+        ],
         aiGenerated: false,
         percentage: 0,
         completed: false
@@ -270,6 +299,13 @@ Return only the enhanced description (no other text, no quotes).
         priority: 'high',
         category: 'Networking',
         estimatedDuration: '3 days',
+        subtasks: [
+          { title: 'Upload professional headshot photo', completed: false },
+          { title: 'Write compelling headline and summary', completed: false },
+          { title: 'Add all work experience with achievements', completed: false },
+          { title: 'Request 5+ recommendations from colleagues', completed: false },
+          { title: 'Connect with 50+ industry professionals', completed: false },
+        ],
         aiGenerated: false,
         percentage: 0,
         completed: false
@@ -280,6 +316,15 @@ Return only the enhanced description (no other text, no quotes).
         priority: 'medium',
         category: 'Learning',
         estimatedDuration: '1 month',
+        subtasks: [
+          { title: 'Research top 10 in-demand skills in your industry', completed: false },
+          { title: 'Choose 2-3 skills aligned with career goals', completed: false },
+          { title: 'Find quality online courses or resources', completed: false },
+          { title: 'Complete 25% of first course', completed: false },
+          { title: 'Complete 50% of first course', completed: false },
+          { title: 'Complete 75% of first course', completed: false },
+          { title: 'Finish first course and get certificate', completed: false },
+        ],
         aiGenerated: false,
         percentage: 0,
         completed: false
@@ -290,6 +335,15 @@ Return only the enhanced description (no other text, no quotes).
         priority: 'medium',
         category: 'Portfolio',
         estimatedDuration: '3 weeks',
+        subtasks: [
+          { title: 'Brainstorm and choose project idea', completed: false },
+          { title: 'Create project plan and timeline', completed: false },
+          { title: 'Set up development environment', completed: false },
+          { title: 'Build core functionality', completed: false },
+          { title: 'Add styling and polish', completed: false },
+          { title: 'Write documentation', completed: false },
+          { title: 'Deploy and share project', completed: false },
+        ],
         aiGenerated: false,
         percentage: 0,
         completed: false
@@ -300,6 +354,13 @@ Return only the enhanced description (no other text, no quotes).
         priority: 'medium',
         category: 'Networking',
         estimatedDuration: '2 weeks',
+        subtasks: [
+          { title: 'Find 3 relevant online communities or groups', completed: false },
+          { title: 'Join and introduce yourself in communities', completed: false },
+          { title: 'Attend virtual or in-person industry event', completed: false },
+          { title: 'Have coffee chat with 2 industry professionals', completed: false },
+          { title: 'Share valuable content with your network', completed: false },
+        ],
         aiGenerated: false,
         percentage: 0,
         completed: false
@@ -310,6 +371,13 @@ Return only the enhanced description (no other text, no quotes).
         priority: 'low',
         category: 'Research',
         estimatedDuration: '1 week',
+        subtasks: [
+          { title: 'Subscribe to 3 industry newsletters', completed: false },
+          { title: 'Follow 10 industry leaders on social media', completed: false },
+          { title: 'Read 5 recent industry articles', completed: false },
+          { title: 'Identify 3 emerging trends in your field', completed: false },
+          { title: 'Create summary of key findings', completed: false },
+        ],
         aiGenerated: false,
         percentage: 0,
         completed: false

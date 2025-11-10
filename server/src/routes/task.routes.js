@@ -5,6 +5,7 @@ const {
   createTask,
   updateTask,
   updateTaskProgress,
+  toggleSubtaskCompletion,
   toggleTaskCompletion,
   deleteTask,
   enhanceTask,
@@ -24,6 +25,7 @@ router.get('/:id', getTask);
 router.post('/', taskValidation, createTask);
 router.put('/:id', updateTask);
 router.patch('/:id/progress', updateTaskProgress);
+router.patch('/:id/subtasks/:subtaskIndex/toggle', toggleSubtaskCompletion);
 router.patch('/:id/toggle', toggleTaskCompletion);
 router.patch('/:id/enhance', enhanceTask);
 router.delete('/:id', deleteTask);

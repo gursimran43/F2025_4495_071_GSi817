@@ -5,7 +5,7 @@ interface Experience {
     company: string;
     position: string;
     duration: string;
-    description: string;
+    description: string | string[];
 }
 
 interface Education {
@@ -31,12 +31,30 @@ interface ResumePreviewProps {
 }
 
 export const ResumePreview = ({ personalInfo, experiences, education, skills }: ResumePreviewProps) => {
+    console.log('ResumePreview received:', { personalInfo, experiences, education, skills });
+
+    // Ensure we have valid data with defaults
+    const safePersonalInfo = personalInfo || { name: '', email: '', phone: '', location: '', summary: '' };
+    const safeExperiences = Array.isArray(experiences) ? experiences : [];
+    const safeEducation = Array.isArray(education) ? education : [];
+    const safeSkills = skills || '';
+
     // Split skills into array for better display
-    const skillsArray = skills ? skills.split(',').map(s => s.trim()).filter(s => s) : [];
+    const skillsArray = safeSkills ? safeSkills.split(',').map(s => s.trim()).filter(s => s) : [];
 
     // Format description to handle bullet points
-    const formatDescription = (description: string) => {
+    const formatDescription = (description: string | string[] | any) => {
         if (!description) return [];
+
+        // If description is already an array, return it
+        if (Array.isArray(description)) {
+            return description.map(line => String(line).trim()).filter(line => line.length > 0);
+        }
+
+        // If description is not a string, convert it
+        if (typeof description !== 'string') {
+            return [String(description)];
+        }
 
         // Split by newlines or bullet points
         const lines = description
@@ -48,17 +66,17 @@ export const ResumePreview = ({ personalInfo, experiences, education, skills }: 
     };
 
     return (
-        <div className="w-full max-w-[210mm] mx-auto bg-white" style={{ minHeight: '297mm' }}>
-            <div className="flex h-full" id="resume-content">
+        <div id="resume-content" className="w-full max-w-[210mm] mx-auto bg-white p-0" style={{ minHeight: '297mm' }}>
+            <div className="flex h-full">
                 {/* Left Sidebar - Accent Color */}
                 <div className="w-[35%] bg-gradient-to-b from-slate-800 to-slate-900 text-white p-8">
                     {/* Profile Section */}
                     <div className="mb-8 pb-6 border-b-2 border-slate-600">
                         <div className="w-24 h-24 rounded-full bg-slate-700 flex items-center justify-center text-4xl font-bold mb-4 mx-auto">
-                            {personalInfo.name ? personalInfo.name.charAt(0).toUpperCase() : 'U'}
+                            {safePersonalInfo.name ? safePersonalInfo.name.charAt(0).toUpperCase() : 'U'}
                         </div>
                         <h1 className="text-2xl font-bold text-center mb-1 leading-tight">
-                            {personalInfo.name || 'Your Name'}
+                            {safePersonalInfo.name || 'Your Name'}
                         </h1>
                         <p className="text-slate-300 text-center text-sm">Professional</p>
                     </div>
@@ -72,22 +90,22 @@ export const ResumePreview = ({ personalInfo, experiences, education, skills }: 
                             CONTACT
                         </h2>
                         <div className="space-y-3 text-sm">
-                            {personalInfo.email && (
+                            {safePersonalInfo.email && (
                                 <div className="flex items-start gap-2">
                                     <Mail className="w-4 h-4 mt-0.5 flex-shrink-0 text-slate-400" />
-                                    <span className="text-slate-300 break-all">{personalInfo.email}</span>
+                                    <span className="text-slate-300 break-all">{safePersonalInfo.email}</span>
                                 </div>
                             )}
-                            {personalInfo.phone && (
+                            {safePersonalInfo.phone && (
                                 <div className="flex items-start gap-2">
                                     <Phone className="w-4 h-4 mt-0.5 flex-shrink-0 text-slate-400" />
-                                    <span className="text-slate-300">{personalInfo.phone}</span>
+                                    <span className="text-slate-300">{safePersonalInfo.phone}</span>
                                 </div>
                             )}
-                            {personalInfo.location && (
+                            {safePersonalInfo.location && (
                                 <div className="flex items-start gap-2">
                                     <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-slate-400" />
-                                    <span className="text-slate-300">{personalInfo.location}</span>
+                                    <span className="text-slate-300">{safePersonalInfo.location}</span>
                                 </div>
                             )}
                         </div>
@@ -119,7 +137,7 @@ export const ResumePreview = ({ personalInfo, experiences, education, skills }: 
                 {/* Right Content Area */}
                 <div className="w-[65%] p-8 bg-white">
                     {/* Professional Summary */}
-                    {personalInfo.summary && (
+                    {safePersonalInfo.summary && (
                         <div className="mb-8">
                             <div className="flex items-center gap-2 mb-3">
                                 <div className="h-8 w-1 bg-slate-800"></div>
@@ -128,13 +146,13 @@ export const ResumePreview = ({ personalInfo, experiences, education, skills }: 
                                 </h2>
                             </div>
                             <p className="text-sm text-slate-700 leading-relaxed pl-3">
-                                {personalInfo.summary}
+                                {safePersonalInfo.summary}
                             </p>
                         </div>
                     )}
 
                     {/* Experience */}
-                    {experiences.some(exp => exp.company || exp.position) && (
+                    {safeExperiences.some(exp => exp.company || exp.position) && (
                         <div className="mb-8">
                             <div className="flex items-center gap-2 mb-4">
                                 <div className="h-8 w-1 bg-slate-800"></div>
@@ -144,7 +162,7 @@ export const ResumePreview = ({ personalInfo, experiences, education, skills }: 
                                 </h2>
                             </div>
                             <div className="space-y-5 pl-3">
-                                {experiences.filter(exp => exp.company || exp.position).map((exp) => {
+                                {safeExperiences.filter(exp => exp.company || exp.position).map((exp) => {
                                     const descriptionLines = formatDescription(exp.description);
 
                                     return (
@@ -181,7 +199,7 @@ export const ResumePreview = ({ personalInfo, experiences, education, skills }: 
                     )}
 
                     {/* Education */}
-                    {education.some(edu => edu.school || edu.degree) && (
+                    {safeEducation.some(edu => edu.school || edu.degree) && (
                         <div className="mb-8">
                             <div className="flex items-center gap-2 mb-4">
                                 <div className="h-8 w-1 bg-slate-800"></div>
@@ -191,7 +209,7 @@ export const ResumePreview = ({ personalInfo, experiences, education, skills }: 
                                 </h2>
                             </div>
                             <div className="space-y-4 pl-3">
-                                {education.filter(edu => edu.school || edu.degree).map((edu) => (
+                                {safeEducation.filter(edu => edu.school || edu.degree).map((edu) => (
                                     <div key={edu.id} className="relative">
                                         {/* Timeline dot */}
                                         <div className="absolute -left-6 top-1 w-2 h-2 bg-slate-400 rounded-full"></div>

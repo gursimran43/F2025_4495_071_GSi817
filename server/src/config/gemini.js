@@ -5,11 +5,12 @@ if (!process.env.GEMINI_API_KEY) {
   process.exit(1);
 }
 
+// Initialize with API version beta to access newer models
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Initialize the Gemini Pro model
-const model = genAI.getGenerativeModel({ 
-  model: 'gemini-pro',
+// Initialize the Gemini 2.5 Flash model (fast and cost-effective)
+const model = genAI.getGenerativeModel({
+  model: 'models/gemini-2.5-flash',
   generationConfig: {
     temperature: 0.7,
     topK: 40,
@@ -18,6 +19,6 @@ const model = genAI.getGenerativeModel({
   }
 });
 
-console.log('🤖 Gemini AI initialized successfully');
+console.log('🤖 Gemini AI initialized successfully with gemini-2.5-flash');
 
 module.exports = { model, genAI };

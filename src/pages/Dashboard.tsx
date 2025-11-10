@@ -11,7 +11,7 @@ import {
   Target, LogOut, TrendingUp, CheckCircle2, Award, Zap, BookOpen, Rocket,
   Users, Calendar, FileText, BarChart3, PieChart, Activity, Clock, Brain,
   Lightbulb, Star, ArrowUpRight, ArrowDownRight, Minus, Mail, Github, Linkedin,
-  ExternalLink, MessageCircle, Globe2, Layers, GraduationCap
+  ExternalLink, MessageCircle, Globe2, Layers, GraduationCap, User
 } from 'lucide-react';
 import {
   LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RePieChart, Pie, Cell,
@@ -649,7 +649,10 @@ const Dashboard = () => {
                     <p className="text-sm font-medium text-foreground truncate max-w-[150px]">{user.name || user.email}</p>
                     <p className="text-xs text-muted-foreground">Keep pushing forward! 🚀</p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={logout} className="gap-1 sm:gap-2">
+                  <Button variant="outline" size="sm" onClick={() => {
+                    logout();
+                    navigate('/login');
+                  }} className="gap-1 sm:gap-2">
                     <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     <span className="hidden sm:inline">Logout</span>
                   </Button>
@@ -688,20 +691,22 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-2 bg-gradient-to-br from-accent/10 to-primary/10 hover:shadow-lg transition-all">
+            <Card className="border-2 bg-gradient-to-br from-accent/10 to-primary/10 hover:shadow-lg transition-all cursor-pointer" onClick={() => navigate('/edit-profile')}>
               <CardContent className="pt-6 pb-6">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-accent/20 rounded-xl">
-                    <Zap className="h-8 w-8 text-accent" />
+                    <User className="h-8 w-8 text-accent" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-foreground">
-                      Quick Actions
+                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      Edit Profile
+                      <Badge variant="secondary" className="text-xs">Update & Regenerate</Badge>
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Access your tools and features
+                      Update your details and regenerate your plan
                     </p>
                   </div>
+                  <Brain className="h-5 w-5 text-accent opacity-50" />
                 </div>
               </CardContent>
             </Card>

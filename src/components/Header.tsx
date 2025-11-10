@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Target, LogOut, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,6 +13,12 @@ import {
 
 const Header = () => {
     const { user, logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
 
     return (
         <header className="border-b border-border bg-card">
@@ -40,7 +46,7 @@ const Header = () => {
                                     <Link to="/resume-builder">Resume Builder</Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={logout} className="text-destructive">
+                                <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                                     <LogOut className="h-4 w-4 mr-2" />
                                     Log out
                                 </DropdownMenuItem>

@@ -10,6 +10,7 @@ import Signup from "./pages/Signup";
 import Onboarding from "./pages/Onboarding";
 import GeneratingPlan from "./pages/GeneratingPlan";
 import Dashboard from "./pages/Dashboard";
+import EditProfile from "./pages/EditProfile";
 import ResumeBuilder from "./pages/ResumeBuilder";
 import NotFound from "./pages/NotFound";
 
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/generating-plan" element={<GeneratingPlan />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/edit-profile" element={<EditProfile />} />
             <Route path="/resume-builder" element={<ResumeBuilder />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -12,8 +12,9 @@ const Signup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signup } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -29,18 +30,34 @@ const Signup = () => {
       return;
     }
 
+    if (!phoneNumber.startsWith('+')) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid phone number',
+        description: 'Phone number must include country code (e.g., +1234567890)',
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      await signup(email, password);
-      navigate('/onboarding');
+      // Navigate to OTP verification page
+      navigate('/verify-otp', {
+        state: {
+          email,
+          password,
+          name,
+          phoneNumber,
+          mode: 'signup',
+        },
+      });
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Signup failed',
+        title: 'Error',
         description: error instanceof Error ? error.message : 'An error occurred',
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -61,6 +78,17 @@ const Signup = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
@@ -70,6 +98,20 @@ const Signup = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber">Phone Number</Label>
+                <Input
+                  id="phoneNumber"
+                  type="tel"
+                  placeholder="+1234567890"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Include country code (e.g., +1 for US)
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
@@ -96,7 +138,7 @@ const Signup = () => {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Creating account...' : 'Sign up'}
+                {isLoading ? 'Processing...' : 'Continue to Verification'}
               </Button>
             </form>
 

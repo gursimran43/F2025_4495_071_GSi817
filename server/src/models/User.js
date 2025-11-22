@@ -21,6 +21,19 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    phoneNumber: {
+      type: String,
+      trim: true,
+      sparse: true,
+    },
+    phoneVerified: {
+      type: Boolean,
+      default: false,
+    },
+    twoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
     onboardingComplete: {
       type: Boolean,
       default: false,

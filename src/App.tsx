@@ -7,6 +7,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import OtpVerification from "./pages/OtpVerification";
 import Onboarding from "./pages/Onboarding";
 import GeneratingPlan from "./pages/GeneratingPlan";
 import Dashboard from "./pages/Dashboard";
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/verify-otp" element={<OtpVerification />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/generating-plan" element={<GeneratingPlan />} />
             <Route path="/dashboard" element={<Dashboard />} />

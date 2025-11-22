@@ -121,6 +121,23 @@ class ApiService {
         return response.json();
     }
 
+    async verifyOtp(data: {
+        email: string;
+        password: string;
+        name?: string;
+        phoneNumber: string;
+        firebaseToken: string;
+        mode: 'signup' | 'login';
+    }): Promise<ApiResponse<AuthData>> {
+        const response = await fetch(`${API_URL}/api/auth/verify-otp`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify(data),
+        });
+
+        return response.json();
+    }
+
     async getMe(): Promise<ApiResponse<{ user: AuthData['user'] }>> {
         const response = await fetch(`${API_URL}/api/auth/me`, {
             method: 'GET',

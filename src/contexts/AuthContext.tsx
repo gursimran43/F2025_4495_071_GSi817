@@ -6,6 +6,9 @@ interface User {
   id: string;
   email: string;
   name?: string;
+  phoneNumber?: string;
+  phoneVerified?: boolean;
+  twoFactorEnabled?: boolean;
   onboardingComplete?: boolean;
 }
 

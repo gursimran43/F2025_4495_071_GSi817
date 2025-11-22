@@ -5,12 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [use2FA, setUse2FA] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -21,19 +24,41 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      await login(email, password);
-      toast({
-        title: 'Welcome back!',
-        description: 'Login successful',
-      });
-      navigate('/dashboard');
+      if (use2FA) {
+        // Redirect to OTP verification for 2FA login
+        if (!phoneNumber.startsWith('+')) {
+          toast({
+            variant: 'destructive',
+            title: 'Invalid phone number',
+            description: 'Phone number must include country code (e.g., +1234567890)',
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        navigate('/verify-otp', {
+          state: {
+            email,
+            password,
+            phoneNumber,
+            mode: 'login',
+          },
+        });
+      } else {
+        // Regular login without 2FA
+        await login(email, password);
+        toast({
+          title: 'Welcome back!',
+          description: 'Login successful',
+        });
+        navigate('/dashboard');
+      }
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Login failed',
         description: 'Something went wrong',
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -75,8 +100,40 @@ const Login = () => {
                   required
                 />
               </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="use2fa"
+                  checked={use2FA}
+                  onCheckedChange={(checked) => setUse2FA(checked as boolean)}
+                />
+                <label
+                  htmlFor="use2fa"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Use 2-Factor Authentication
+                </label>
+              </div>
+
+              {use2FA && (
+                <div className="space-y-2">
+                  <Label htmlFor="phoneNumber">Phone Number</Label>
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    placeholder="+1234567890"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    required={use2FA}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Include country code (e.g., +1 for US)
+                  </p>
+                </div>
+              )}
+
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Logging in...' : 'Log in'}
+                {isLoading ? 'Processing...' : use2FA ? 'Continue to Verification' : 'Log in'}
               </Button>
             </form>
 

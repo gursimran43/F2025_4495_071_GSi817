@@ -7,4 +7,7 @@ build
 .gitignore
 .github
 CLAUDE.md
-.gitignore
+
+# Firebase credentials
+**/firebase-service-account.json
+**/serviceAccountKey.json

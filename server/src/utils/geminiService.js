@@ -1056,6 +1056,367 @@ IMPORTANT:
       return currentResume;
     }
   }
+
+  // Generate interview questions based on completed tasks
+  static async generateInterviewQuestions(completedTasks, onboardingData) {
+    try {
+      console.log('🤖 Generating interview questions for', completedTasks.length, 'completed tasks');
+
+      const taskSummaries = completedTasks.map(task => ({
+        title: task.title,
+        description: task.description,
+        category: task.category,
+      }));
+
+      const prompt = `
+You are an AI interview coach that creates practice interview questions based on a user's completed learning tasks.
+
+User Profile:
+- Profession: ${onboardingData?.profession || 'Professional'}
+- Experience Level: ${onboardingData?.experience || 'Intermediate'}
+- Industry: ${onboardingData?.industry || 'Technology'}
+- Goals: ${onboardingData?.goals || 'Career advancement'}
+
+Completed Tasks (what the user has learned):
+${taskSummaries.map((task, i) => `${i + 1}. ${task.title} (${task.category}): ${task.description}`).join('\n')}
+
+Generate EXACTLY 10 interview practice questions based on these completed tasks. The questions should:
+1. Test knowledge and understanding of the tasks they've completed
+2. Mix of MCQ (Multiple Choice Questions) and short answer questions
+3. Be realistic interview questions for ${onboardingData?.profession || 'their profession'}
+4. Cover different task categories proportionally
+5. Range from easy to medium difficulty
+
+Question Distribution:
+- 6 MCQ questions (with 4 options each, only 1 correct)
+- 4 short answer questions (expecting 2-3 sentence responses)
+
+Return ONLY valid JSON (no markdown, no backticks) in this EXACT format:
+[
+  {
+    "question": "What is the primary benefit of implementing CI/CD in a development workflow?",
+    "type": "mcq",
+    "options": [
+      "Faster manual testing",
+      "Automated build, test, and deployment pipeline",
+      "Reduced need for version control",
+      "Cheaper hosting costs"
+    ],
+    "correctAnswer": "Automated build, test, and deployment pipeline",
+    "relatedTask": "Set up CI/CD pipeline",
+    "category": "DevOps"
+  },
+  {
+    "question": "Explain how you would approach building a scalable REST API for a high-traffic application.",
+    "type": "short",
+    "expectedKeywords": ["caching", "database", "load balancing", "API design", "performance", "rate limiting"],
+    "relatedTask": "Build RESTful API",
+    "category": "Backend Development"
+  }
+]
+
+IMPORTANT REQUIREMENTS:
+- Generate EXACTLY 10 questions total (6 MCQ + 4 short answer)
+- Each MCQ must have exactly 4 options
+- Only 1 option should be the correct answer
+- MCQ correctAnswer must EXACTLY match one of the options
+- Short answer questions should have 3-6 expectedKeywords for evaluation
+- All questions must relate to the completed tasks provided
+- Use professional, realistic interview question format
+- Include relatedTask and category for each question
+`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      console.log('🤖 Raw Interview Questions Response (first 500 chars):', text.substring(0, 500));
+
+      // Clean up the response and parse JSON
+      const cleanText = text
+        .trim()
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .replace(/^[^[\{]*/, '')
+        .replace(/[^}\]]*$/, '')
+        .trim();
+
+      let questions;
+      try {
+        questions = JSON.parse(cleanText);
+      } catch (parseError) {
+        console.error('❌ Interview Questions JSON Parse Error:', parseError.message);
+        console.log('📝 Cleaned Text:', cleanText.substring(0, 500));
+        return this.getFallbackInterviewQuestions(completedTasks);
+      }
+
+      // Validate questions
+      const validatedQuestions = questions.map((q, index) => ({
+        question: q.question || `Question ${index + 1}`,
+        type: ['mcq', 'short'].includes(q.type) ? q.type : 'short',
+        options: q.type === 'mcq' && Array.isArray(q.options) ? q.options : [],
+        correctAnswer: q.type === 'mcq' ? q.correctAnswer : undefined,
+        expectedKeywords: q.type === 'short' && Array.isArray(q.expectedKeywords) ? q.expectedKeywords : [],
+        relatedTask: q.relatedTask || '',
+        category: q.category || 'General',
+      }));
+
+      console.log(`✅ Generated ${validatedQuestions.length} interview questions successfully`);
+      return validatedQuestions;
+
+    } catch (error) {
+      console.error('❌ Gemini Interview Questions Error:', error.message);
+      return this.getFallbackInterviewQuestions(completedTasks);
+    }
+  }
+
+  // Evaluate interview answers using AI
+  static async evaluateInterviewAnswers(questions, answers) {
+    try {
+      console.log('🤖 Evaluating interview answers with AI');
+
+      const qaArray = questions.map((q, index) => {
+        const userAnswer = answers.find(a => a.questionIndex === index);
+        return {
+          question: q.question,
+          type: q.type,
+          correctAnswer: q.correctAnswer,
+          expectedKeywords: q.expectedKeywords,
+          userAnswer: userAnswer?.userAnswer || 'No answer provided',
+        };
+      });
+
+      const prompt = `
+You are an AI interview evaluator. Evaluate the user's answers to these interview questions.
+
+Questions and Answers:
+${qaArray.map((qa, i) => `
+${i + 1}. ${qa.question}
+   Type: ${qa.type}
+   ${qa.type === 'mcq' ? `Correct Answer: ${qa.correctAnswer}` : `Expected Keywords: ${qa.expectedKeywords?.join(', ')}`}
+   User's Answer: ${qa.userAnswer}
+`).join('\n')}
+
+For each answer, provide:
+1. Whether the answer is correct (for MCQ) or quality score 0-100 (for short answers)
+2. Brief feedback explaining why it's correct/incorrect or how to improve
+
+For MCQ questions:
+- Mark as correct if the user's answer matches the correct answer exactly or is very close in meaning
+- isCorrect: true/false
+- score: 100 if correct, 0 if incorrect
+
+For short answer questions:
+- Evaluate based on presence of expected keywords and overall quality
+- Check if answer demonstrates understanding
+- score: 0-100 (0-40: Poor, 41-70: Good, 71-100: Excellent)
+- isCorrect: true if score >= 70, false otherwise
+
+Return ONLY valid JSON (no markdown, no backticks) in this EXACT format:
+[
+  {
+    "questionIndex": 0,
+    "isCorrect": true,
+    "score": 100,
+    "feedback": "Correct! This answer demonstrates good understanding of the concept."
+  },
+  {
+    "questionIndex": 1,
+    "isCorrect": false,
+    "score": 60,
+    "feedback": "Partial credit. Your answer mentions caching which is good, but could also discuss load balancing and database optimization."
+  }
+]
+
+IMPORTANT:
+- Return evaluation for ALL ${questions.length} questions in the same order
+- Each evaluation must have questionIndex, isCorrect, score, and feedback
+- Be constructive and educational in feedback
+- Score must be between 0-100
+`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      console.log('🤖 Raw Evaluation Response (first 500 chars):', text.substring(0, 500));
+
+      // Clean up the response and parse JSON
+      const cleanText = text
+        .trim()
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .replace(/^[^[\{]*/, '')
+        .replace(/[^}\]]*$/, '')
+        .trim();
+
+      let evaluations;
+      try {
+        evaluations = JSON.parse(cleanText);
+      } catch (parseError) {
+        console.error('❌ Evaluation JSON Parse Error:', parseError.message);
+        return this.getFallbackEvaluation(questions, answers);
+      }
+
+      // Validate evaluations
+      const validatedEvaluations = evaluations.map((evaluation, index) => ({
+        questionIndex: evaluation.questionIndex !== undefined ? evaluation.questionIndex : index,
+        isCorrect: evaluation.isCorrect === true,
+        score: Math.min(100, Math.max(0, evaluation.score || 0)),
+        feedback: evaluation.feedback || 'No feedback available',
+      }));
+
+      console.log(`✅ Evaluated ${validatedEvaluations.length} answers successfully`);
+      return validatedEvaluations;
+
+    } catch (error) {
+      console.error('❌ Gemini Evaluation Error:', error.message);
+      return this.getFallbackEvaluation(questions, answers);
+    }
+  }
+
+  // Fallback interview questions if AI fails
+  static getFallbackInterviewQuestions(completedTasks) {
+    console.log('🔄 Generating fallback interview questions');
+
+    const fallbackQuestions = [
+      {
+        question: 'What motivated you to pursue your current career goals?',
+        type: 'short',
+        expectedKeywords: ['passion', 'growth', 'learning', 'impact', 'goals'],
+        relatedTask: 'Career Planning',
+        category: 'Career Development',
+      },
+      {
+        question: 'Which of the following is a key principle of good software design?',
+        type: 'mcq',
+        options: [
+          'Write code as quickly as possible',
+          'Separation of concerns and modularity',
+          'Use as many design patterns as possible',
+          'Avoid documentation',
+        ],
+        correctAnswer: 'Separation of concerns and modularity',
+        relatedTask: 'Learning',
+        category: 'Software Engineering',
+      },
+      {
+        question: 'Describe a challenging technical problem you solved recently and your approach.',
+        type: 'short',
+        expectedKeywords: ['problem', 'solution', 'approach', 'debugging', 'research', 'testing'],
+        relatedTask: 'Projects',
+        category: 'Problem Solving',
+      },
+      {
+        question: 'What is the primary purpose of version control systems like Git?',
+        type: 'mcq',
+        options: [
+          'To make code run faster',
+          'To track changes and enable collaboration',
+          'To compile code automatically',
+          'To deploy applications',
+        ],
+        correctAnswer: 'To track changes and enable collaboration',
+        relatedTask: 'Foundation',
+        category: 'Development Tools',
+      },
+      {
+        question: 'How do you stay updated with new technologies and industry trends?',
+        type: 'short',
+        expectedKeywords: ['reading', 'courses', 'community', 'practice', 'blogs', 'documentation'],
+        relatedTask: 'Research',
+        category: 'Continuous Learning',
+      },
+      {
+        question: 'Which HTTP method is typically used to update an existing resource?',
+        type: 'mcq',
+        options: ['GET', 'POST', 'PUT', 'DELETE'],
+        correctAnswer: 'PUT',
+        relatedTask: 'Learning',
+        category: 'Web Development',
+      },
+      {
+        question: 'Explain the importance of testing in software development.',
+        type: 'short',
+        expectedKeywords: ['quality', 'bugs', 'reliability', 'confidence', 'regression', 'automation'],
+        relatedTask: 'Best Practices',
+        category: 'Software Quality',
+      },
+      {
+        question: 'What does API stand for?',
+        type: 'mcq',
+        options: [
+          'Advanced Programming Interface',
+          'Application Programming Interface',
+          'Automated Program Integration',
+          'Application Process Integration',
+        ],
+        correctAnswer: 'Application Programming Interface',
+        relatedTask: 'Learning',
+        category: 'Technical Knowledge',
+      },
+      {
+        question: 'Describe your approach to learning a new programming language or framework.',
+        type: 'short',
+        expectedKeywords: ['documentation', 'practice', 'projects', 'tutorials', 'fundamentals'],
+        relatedTask: 'Skills Development',
+        category: 'Learning Strategy',
+      },
+      {
+        question: 'Which of these is a benefit of code reviews?',
+        type: 'mcq',
+        options: [
+          'Slowing down development',
+          'Knowledge sharing and catching bugs early',
+          'Making code more complex',
+          'Reducing team collaboration',
+        ],
+        correctAnswer: 'Knowledge sharing and catching bugs early',
+        relatedTask: 'Best Practices',
+        category: 'Team Collaboration',
+      },
+    ];
+
+    return fallbackQuestions.slice(0, 10);
+  }
+
+  // Fallback evaluation if AI fails
+  static getFallbackEvaluation(questions, answers) {
+    console.log('🔄 Generating fallback evaluation');
+
+    return questions.map((question, index) => {
+      const userAnswer = answers.find(a => a.questionIndex === index);
+      const answerText = userAnswer?.userAnswer || '';
+
+      if (question.type === 'mcq') {
+        const isCorrect = answerText.trim().toLowerCase() === question.correctAnswer?.trim().toLowerCase();
+        return {
+          questionIndex: index,
+          isCorrect,
+          score: isCorrect ? 100 : 0,
+          feedback: isCorrect
+            ? 'Correct answer!'
+            : `Incorrect. The correct answer is: ${question.correctAnswer}`,
+        };
+      } else {
+        // Short answer - basic keyword matching
+        const keywords = question.expectedKeywords || [];
+        const matchedKeywords = keywords.filter(keyword =>
+          answerText.toLowerCase().includes(keyword.toLowerCase())
+        );
+        const score = Math.round((matchedKeywords.length / Math.max(keywords.length, 1)) * 100);
+
+        return {
+          questionIndex: index,
+          isCorrect: score >= 70,
+          score,
+          feedback: score >= 70
+            ? 'Good answer! You covered the key points.'
+            : `Your answer could be improved. Consider mentioning: ${keywords.slice(0, 3).join(', ')}`,
+        };
+      }
+    });
+  }
 }
 
 module.exports = GeminiService;

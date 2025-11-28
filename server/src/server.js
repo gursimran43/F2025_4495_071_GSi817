@@ -49,6 +49,7 @@ app.use('/api/tasks', require('./routes/task.routes'));
 app.use('/api/recommendations', require('./routes/recommendation.routes'));
 app.use('/api/resumes', require('./routes/resume.routes'));
 app.use('/api/analytics', require('./routes/analytics.routes'));
+app.use('/api/interview', require('./routes/interview'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -75,6 +76,7 @@ app.get('/', (req, res) => {
       recommendations: '/api/recommendations',
       resumes: '/api/resumes',
       analytics: '/api/analytics',
+      interview: '/api/interview',
     }
   });
 });

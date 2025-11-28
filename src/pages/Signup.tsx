@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/services/api';
 
 const Signup = () => {
   const [email, setEmail] = useState('');
@@ -17,6 +18,7 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { setAuthData } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +32,8 @@ const Signup = () => {
       return;
     }
 
-    if (!phoneNumber.startsWith('+')) {
+    // Only validate phone number if not using test password
+    if (password !== '979797' && !phoneNumber.startsWith('+')) {
       toast({
         variant: 'destructive',
         title: 'Invalid phone number',
@@ -42,21 +45,42 @@ const Signup = () => {
     setIsLoading(true);
 
     try {
-      // Navigate to OTP verification page
-      navigate('/verify-otp', {
-        state: {
-          email,
-          password,
-          name,
-          phoneNumber,
-          mode: 'signup',
-        },
-      });
+      // Call signup API
+      const response = await api.signup(email, password, name);
+
+      if (!response.success) {
+        throw new Error(response.message || 'Signup failed');
+      }
+
+      // Check if OTP is required
+      if (response.data && 'requiresOTP' in response.data && response.data.requiresOTP) {
+        // Navigate to OTP verification page
+        navigate('/verify-otp', {
+          state: {
+            email,
+            password,
+            name,
+            phoneNumber,
+            mode: 'signup',
+          },
+        });
+      } else if (response.data && 'token' in response.data && 'user' in response.data) {
+        // Test password used - direct signup without 2FA
+        setAuthData(response.data.user, response.data.token);
+
+        toast({
+          title: 'Account created successfully!',
+          description: 'Welcome to GoalFlow (test mode)',
+        });
+
+        // Navigate to onboarding
+        navigate('/onboarding');
+      }
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'An error occurred',
+        title: 'Signup Error',
+        description: error instanceof Error ? error.message : 'An error occurred during signup',
       });
       setIsLoading(false);
     }
@@ -100,17 +124,22 @@ const Signup = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber">Phone Number</Label>
+                <Label htmlFor="phoneNumber">
+                  Phone Number {password !== '979797' && <span className="text-destructive">*</span>}
+                  {password === '979797' && <span className="text-xs text-muted-foreground ml-2">(Optional in test mode)</span>}
+                </Label>
                 <Input
                   id="phoneNumber"
                   type="tel"
                   placeholder="+1234567890"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  required
+                  required={password !== '979797'}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Include country code (e.g., +1 for US)
+                  {password === '979797'
+                    ? 'Test mode: 2FA disabled - phone number optional'
+                    : 'Include country code (e.g., +1 for US)'}
                 </p>
               </div>
               <div className="space-y-2">
@@ -124,6 +153,11 @@ const Signup = () => {
                   required
                   minLength={6}
                 />
+                {password === '979797' && (
+                  <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                    <span>✓</span> Test mode enabled - 2FA will be skipped
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -138,7 +172,7 @@ const Signup = () => {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Processing...' : 'Continue to Verification'}
+                {isLoading ? 'Processing...' : password === '979797' ? 'Sign Up (Test Mode)' : 'Continue to Verification'}
               </Button>
             </form>
 

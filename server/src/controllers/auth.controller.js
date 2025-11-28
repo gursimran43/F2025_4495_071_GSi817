@@ -25,30 +25,48 @@ exports.signup = async (req, res, next) => {
       });
     }
 
-    // Create user
-    const user = await User.create({
-      email,
-      password,
-      name: name || '',
-      onboardingComplete: false,
-    });
+    // Testing bypass: if password is 979797, skip 2FA and register directly
+    const isTestPassword = password === '979797';
 
-    // Generate token
-    const token = generateToken(user._id);
+    if (isTestPassword) {
+      // Direct signup without 2FA (testing mode)
+      const user = await User.create({
+        email,
+        password,
+        name: name || '',
+        onboardingComplete: false,
+        phoneVerified: false,
+        twoFactorEnabled: false,
+      });
 
-    console.log(`✅ New user registered: ${email}`);
+      // Generate token
+      const token = generateToken(user._id);
 
-    res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
-      data: {
-        user: {
-          id: user._id,
-          email: user.email,
-          name: user.name,
-          onboardingComplete: user.onboardingComplete,
+      console.log(`✅ New user registered (TEST MODE - no 2FA): ${email}`);
+
+      return res.status(201).json({
+        success: true,
+        message: 'User registered successfully (test mode)',
+        data: {
+          user: {
+            id: user._id,
+            email: user.email,
+            name: user.name,
+            onboardingComplete: user.onboardingComplete,
+          },
+          token,
         },
-        token,
+      });
+    }
+
+    // Normal flow: return success and indicate 2FA is required
+    // Don't create user yet - they need to verify OTP first
+    res.status(200).json({
+      success: true,
+      message: 'Please verify your phone number with OTP',
+      data: {
+        requiresOTP: true,
+        email,
       },
     });
   } catch (error) {
@@ -82,7 +100,48 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    // Update last login
+    // Testing bypass: if password is 979797, skip 2FA and login directly
+    const isTestPassword = password === '979797';
+
+    if (isTestPassword) {
+      // Direct login without 2FA (testing mode)
+      user.lastLogin = new Date();
+      await user.save();
+
+      // Generate token
+      const token = generateToken(user._id);
+
+      console.log(`✅ User logged in (TEST MODE - no 2FA): ${email}`);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Login successful (test mode)',
+        data: {
+          user: {
+            id: user._id,
+            email: user.email,
+            name: user.name,
+            onboardingComplete: user.onboardingComplete,
+          },
+          token,
+        },
+      });
+    }
+
+    // Normal flow: Check if user has 2FA enabled
+    if (user.twoFactorEnabled) {
+      // User has 2FA enabled, require OTP verification
+      return res.status(200).json({
+        success: true,
+        message: 'Please verify your phone number with OTP',
+        data: {
+          requiresOTP: true,
+          email,
+        },
+      });
+    }
+
+    // User doesn't have 2FA enabled, login directly
     user.lastLogin = new Date();
     await user.save();
 
@@ -175,6 +234,14 @@ exports.updateProfile = async (req, res, next) => {
 exports.verifyOtp = async (req, res, next) => {
   try {
     const { email, password, name, phoneNumber, firebaseToken, mode } = req.body;
+
+    // Check if Firebase is initialized
+    if (!admin || !admin.auth) {
+      return res.status(503).json({
+        success: false,
+        message: 'Firebase 2FA is not configured. Please use test password "979797" for authentication.',
+      });
+    }
 
     // Verify Firebase token
     let decodedToken;

@@ -13,6 +13,7 @@ import {
   Lightbulb, Star, ArrowUpRight, ArrowDownRight, Minus, Mail, Github, Linkedin,
   ExternalLink, MessageCircle, Globe2, Layers, GraduationCap, User
 } from 'lucide-react';
+import InterviewPreparation from '@/components/InterviewPreparation';
 import {
   LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RePieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart,
@@ -1316,6 +1317,9 @@ const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Interview Preparation Section */}
+          <InterviewPreparation />
 
           {/* Motivation Section */}
           <Card className="border-2 shadow-xl bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10">

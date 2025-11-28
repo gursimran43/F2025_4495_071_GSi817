@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/services/api';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -15,7 +16,7 @@ const Login = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [use2FA, setUse2FA] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { setAuthData } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -24,40 +25,67 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      if (use2FA) {
-        // Redirect to OTP verification for 2FA login
-        if (!phoneNumber.startsWith('+')) {
+      // Call login API
+      const response = await api.login(email, password);
+
+      if (!response.success) {
+        throw new Error(response.message || 'Login failed');
+      }
+
+      // Check if OTP is required
+      if (response.data && 'requiresOTP' in response.data && response.data.requiresOTP) {
+        // Need 2FA - redirect to OTP verification
+        if (use2FA) {
+          if (!phoneNumber.startsWith('+')) {
+            toast({
+              variant: 'destructive',
+              title: 'Invalid phone number',
+              description: 'Phone number must include country code (e.g., +1234567890)',
+            });
+            setIsLoading(false);
+            return;
+          }
+
+          navigate('/verify-otp', {
+            state: {
+              email,
+              password,
+              phoneNumber,
+              mode: 'login',
+            },
+          });
+        } else {
+          // User has 2FA enabled but didn't check the box
           toast({
             variant: 'destructive',
-            title: 'Invalid phone number',
-            description: 'Phone number must include country code (e.g., +1234567890)',
+            title: '2FA Required',
+            description: 'This account has two-factor authentication enabled. Please check "Use 2-Factor Authentication" and enter your phone number.',
           });
+          setUse2FA(true);
           setIsLoading(false);
-          return;
         }
+      } else if (response.data && 'token' in response.data && 'user' in response.data) {
+        // Direct login (test password or no 2FA)
+        setAuthData(response.data.user, response.data.token);
 
-        navigate('/verify-otp', {
-          state: {
-            email,
-            password,
-            phoneNumber,
-            mode: 'login',
-          },
-        });
-      } else {
-        // Regular login without 2FA
-        await login(email, password);
+        const isTestMode = password === '979797';
         toast({
           title: 'Welcome back!',
-          description: 'Login successful',
+          description: isTestMode ? 'Login successful (test mode)' : 'Login successful',
         });
-        navigate('/dashboard');
+
+        // Navigate based on onboarding status
+        if (response.data.user.onboardingComplete) {
+          navigate('/dashboard');
+        } else {
+          navigate('/onboarding');
+        }
       }
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Login failed',
-        description: 'Something went wrong',
+        description: error instanceof Error ? error.message : 'Invalid credentials',
       });
       setIsLoading(false);
     }
@@ -99,21 +127,28 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                {password === '979797' && (
+                  <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                    <span>✓</span> Test mode enabled - 2FA disabled
+                  </p>
+                )}
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="use2fa"
-                  checked={use2FA}
-                  onCheckedChange={(checked) => setUse2FA(checked as boolean)}
-                />
-                <label
-                  htmlFor="use2fa"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Use 2-Factor Authentication
-                </label>
-              </div>
+              {password !== '979797' && (
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="use2fa"
+                    checked={use2FA}
+                    onCheckedChange={(checked) => setUse2FA(checked as boolean)}
+                  />
+                  <label
+                    htmlFor="use2fa"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Use 2-Factor Authentication
+                  </label>
+                </div>
+              )}
 
               {use2FA && (
                 <div className="space-y-2">

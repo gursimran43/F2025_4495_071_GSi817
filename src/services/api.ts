@@ -495,6 +495,126 @@ class ApiService {
 
         return response.json();
     }
+
+    // Interview APIs
+    async checkInterviewAvailability(): Promise<ApiResponse<{
+        canStartInterview: boolean;
+        completedTasksCount: number;
+        message: string;
+    }>> {
+        const response = await fetch(`${API_URL}/api/interview/check-availability`, {
+            method: 'GET',
+            headers: this.getHeaders(true),
+        });
+
+        return response.json();
+    }
+
+    async startInterview(): Promise<ApiResponse<{
+        sessionId: string;
+        questions: Array<{
+            question: string;
+            type: 'mcq' | 'short';
+            options?: string[];
+            category: string;
+            relatedTask: string;
+        }>;
+    }>> {
+        const response = await fetch(`${API_URL}/api/interview/start`, {
+            method: 'POST',
+            headers: this.getHeaders(true),
+        });
+
+        return response.json();
+    }
+
+    async submitInterviewAnswers(sessionId: string, answers: Array<{
+        questionIndex: number;
+        userAnswer: string;
+    }>): Promise<ApiResponse<{
+        sessionId: string;
+        totalScore: number;
+        answers: Array<{
+            questionIndex: number;
+            userAnswer: string;
+            isCorrect: boolean;
+            score: number;
+            feedback: string;
+        }>;
+        questions: Array<{
+            question: string;
+            type: 'mcq' | 'short';
+            options?: string[];
+            correctAnswer?: string;
+            expectedKeywords?: string[];
+            category: string;
+            relatedTask: string;
+        }>;
+    }>> {
+        const response = await fetch(`${API_URL}/api/interview/${sessionId}/submit`, {
+            method: 'POST',
+            headers: this.getHeaders(true),
+            body: JSON.stringify({ answers }),
+        });
+
+        return response.json();
+    }
+
+    async getInterviewHistory(): Promise<ApiResponse<{
+        sessions: Array<{
+            id: string;
+            status: 'in_progress' | 'completed';
+            totalScore?: number;
+            questionCount: number;
+            completedAt?: Date;
+            createdAt: Date;
+        }>;
+        stats: {
+            totalAttempts: number;
+            completedAttempts: number;
+            averageScore: number;
+            bestScore: number;
+        };
+    }>> {
+        const response = await fetch(`${API_URL}/api/interview/history`, {
+            method: 'GET',
+            headers: this.getHeaders(true),
+        });
+
+        return response.json();
+    }
+
+    async getInterviewResults(sessionId: string): Promise<ApiResponse<{
+        session: {
+            id: string;
+            status: 'in_progress' | 'completed';
+            totalScore?: number;
+            completedAt?: Date;
+            questions: Array<{
+                question: string;
+                type: 'mcq' | 'short';
+                options?: string[];
+                correctAnswer?: string;
+                expectedKeywords?: string[];
+                category: string;
+                relatedTask: string;
+            }>;
+            answers: Array<{
+                questionIndex: number;
+                userAnswer: string;
+                isCorrect: boolean;
+                score: number;
+                feedback: string;
+            }>;
+        };
+    }>> {
+        const response = await fetch(`${API_URL}/api/interview/${sessionId}/results`, {
+            method: 'GET',
+            headers: this.getHeaders(true),
+        });
+
+        return response.json();
+    }
 }
 
 export const api = new ApiService();

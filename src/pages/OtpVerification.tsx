@@ -21,7 +21,7 @@ const OtpVerification = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { updateUser } = useAuth();
+  const { setAuthData } = useAuth();
 
   const phoneNumber = location.state?.phoneNumber;
   const email = location.state?.email;
@@ -142,8 +142,7 @@ const OtpVerification = () => {
 
       if (response.success && response.data) {
         const { user, token } = response.data;
-        localStorage.setItem('token', token);
-        await updateUser(user);
+        setAuthData(user, token);
 
         toast({
           title: 'Success!',
